@@ -1,0 +1,914 @@
+{% extends "base.html" %}
+{% block title %}DarkBlend — Your Security Fix Guide{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Page Layout ── */
+.sol-wrap { min-height: calc(100vh - 58px); padding: 28px; }
+.sol-inner { max-width: 860px; margin: 0 auto; }
+
+/* ── Top bar ── */
+.sol-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+}
+.sol-title {
+  font-family: 'Orbitron', monospace; font-size: 20px; font-weight: 900;
+  color: #fff; letter-spacing: 0.04em;
+}
+.sol-subtitle {
+  font-size: 13px; color: var(--txm); margin-top: 4px; font-family: 'Share Tech Mono', monospace;
+}
+.sol-back {
+  background: transparent; border: 1px solid rgba(0,245,200,.2); color: var(--txm);
+  padding: 9px 18px; border-radius: 6px; font-family: 'Orbitron', monospace;
+  font-size: 8px; font-weight: 700; cursor: pointer; letter-spacing: 0.08em;
+  text-transform: uppercase; text-decoration: none;
+  display: flex; align-items: center; gap: 6px; transition: 0.2s;
+}
+.sol-back:hover { border-color: var(--cy); color: var(--cy); }
+
+/* ── Overall Health Card ── */
+.health-card {
+  background: var(--bg2); border: 1px solid rgba(0,245,200,.15);
+  border-radius: 20px; padding: 28px 32px; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+}
+.health-score-wrap { position: relative; width: 110px; height: 110px; flex-shrink: 0; }
+.health-score-wrap canvas { display: block; }
+.health-score-inner {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.health-num {
+  font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 900;
+  line-height: 1; text-shadow: 0 0 18px currentColor;
+}
+.health-lbl {
+  font-family: 'Orbitron', monospace; font-size: 7px; color: var(--txm);
+  margin-top: 3px; letter-spacing: 0.08em; font-weight: 700;
+}
+.health-info { flex: 1; min-width: 200px; }
+.health-verdict {
+  font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 900;
+  color: #fff; letter-spacing: 0.04em; margin-bottom: 6px;
+}
+.health-desc {
+  font-size: 13px; color: var(--txm); line-height: 1.7; margin-bottom: 14px;
+}
+.health-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.hpill {
+  border-radius: 20px; padding: 4px 14px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+  font-family: 'Share Tech Mono', monospace;
+}
+.hpill-red   { background: rgba(255,60,60,.12);   color: #ff5555; border: 1px solid rgba(255,60,60,.3); }
+.hpill-orange{ background: rgba(255,107,157,.1);  color: var(--rose); border: 1px solid rgba(255,107,157,.25); }
+.hpill-yellow{ background: rgba(255,179,71,.1);   color: var(--peach); border: 1px solid rgba(255,179,71,.25); }
+.hpill-green { background: rgba(0,245,200,.08);   color: var(--cy); border: 1px solid rgba(0,245,200,.2); }
+
+/* ── Section wrapper ── */
+.sol-section {
+  background: var(--bg2); border: 1px solid rgba(0,245,200,.1);
+  border-radius: 16px; margin-bottom: 16px; overflow: hidden;
+}
+.sol-sec-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px; cursor: pointer; transition: 0.2s;
+  user-select: none;
+}
+.sol-sec-head:hover { background: rgba(0,245,200,.03); }
+.sec-emoji { font-size: 22px; flex-shrink: 0; }
+.sec-title-wrap { flex: 1; }
+.sec-title {
+  font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 900;
+  color: #fff; letter-spacing: 0.07em; text-transform: uppercase;
+}
+.sec-subtitle { font-size: 12px; color: var(--txm); margin-top: 3px; }
+.sec-badge {
+  border-radius: 6px; padding: 3px 12px;
+  font-size: 10px; font-weight: 700;
+  font-family: 'Share Tech Mono', monospace; letter-spacing: 0.04em; white-space: nowrap;
+}
+.sec-badge-ok       { background: rgba(0,245,200,.08);   color: var(--cy); border: 1px solid rgba(0,245,200,.2); }
+.sec-badge-warn     { background: rgba(255,179,71,.1);    color: var(--peach); border: 1px solid rgba(255,179,71,.25); }
+.sec-badge-danger   { background: rgba(255,107,157,.1);   color: var(--rose); border: 1px solid rgba(255,107,157,.25); }
+.sec-badge-critical { background: rgba(255,60,60,.12);    color: #ff5555; border: 1px solid rgba(255,60,60,.3); }
+.sec-chevron { color: var(--txd); transition: transform 0.25s; margin-left: 6px; font-size: 11px; }
+.sec-chevron.open { transform: rotate(180deg); }
+
+.sol-sec-body { display: none; padding: 0 20px 20px; }
+.sol-sec-body.open { display: block; }
+
+/* ── Issue card ── */
+.issue-card {
+  border: 1px solid rgba(0,245,200,.09); border-radius: 12px;
+  padding: 16px 18px; margin-bottom: 12px;
+  background: rgba(13,18,32,.7); transition: 0.2s;
+}
+.issue-card:hover { border-color: rgba(0,245,200,.2); }
+.issue-card:last-child { margin-bottom: 0; }
+
+/* Status row at top of card */
+.issue-status-row {
+  display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;
+}
+.issue-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+.issue-title-area { flex: 1; }
+.issue-name {
+  font-weight: 800; color: #fff; font-size: 14px; margin-bottom: 4px;
+}
+.issue-plain-desc {
+  font-size: 12px; color: var(--txm); line-height: 1.65;
+}
+.issue-risk-pill {
+  border-radius: 20px; padding: 3px 12px; font-size: 10px; font-weight: 700;
+  font-family: 'Share Tech Mono', monospace; flex-shrink: 0; margin-top: 2px;
+}
+.risk-critical { background: rgba(255,60,60,.12); color: #ff5555; border: 1px solid rgba(255,60,60,.3); }
+.risk-high     { background: rgba(255,107,157,.1); color: var(--rose); border: 1px solid rgba(255,107,157,.25); }
+.risk-medium   { background: rgba(255,179,71,.1);  color: var(--peach); border: 1px solid rgba(255,179,71,.25); }
+.risk-low      { background: rgba(0,245,200,.08);  color: var(--cy); border: 1px solid rgba(0,245,200,.2); }
+.risk-ok       { background: rgba(0,245,200,.08);  color: var(--cy); border: 1px solid rgba(0,245,200,.2); }
+
+/* Fix block */
+.fix-block {
+  background: var(--bg3); border: 1px solid rgba(0,245,200,.1);
+  border-radius: 10px; padding: 14px 16px; margin-top: 10px;
+}
+.fix-block-title {
+  font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 900;
+  color: var(--cy); letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.fix-step {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 7px 0; border-bottom: 1px solid rgba(0,245,200,.05);
+}
+.fix-step:last-of-type { border-bottom: none; }
+.fix-step-num {
+  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(0,245,200,.1); border: 1px solid rgba(0,245,200,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 900;
+  color: var(--cy); margin-top: 2px;
+}
+.fix-step-text {
+  font-size: 12px; color: var(--txm); line-height: 1.65;
+}
+.fix-step-text strong { color: #fff; }
+.fix-step-text code {
+  background: rgba(0,245,200,.07); border: 1px solid rgba(0,245,200,.15);
+  border-radius: 4px; padding: 1px 6px;
+  font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--peach);
+}
+
+/* Copy command line */
+.cmd-line {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(7,11,18,.9); border: 1px solid rgba(0,245,200,.15);
+  border-radius: 6px; padding: 8px 12px; margin: 6px 0; cursor: pointer;
+  transition: 0.2s; gap: 8px;
+}
+.cmd-line:hover { border-color: rgba(0,245,200,.35); background: rgba(0,245,200,.03); }
+.cmd-text {
+  font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--peach);
+  word-break: break-all; flex: 1;
+}
+.cmd-copy { font-size: 12px; color: var(--txd); flex-shrink: 0; transition: 0.2s; }
+.cmd-line:hover .cmd-copy { color: var(--cy); }
+
+.fix-note {
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,245,200,.07);
+  font-size: 11px; color: var(--txm); line-height: 1.65;
+}
+.fix-note strong { color: #fff; }
+
+/* ── What it means / Why it matters strip ── */
+.why-strip {
+  background: rgba(124,77,255,.06); border: 1px solid rgba(124,77,255,.18);
+  border-radius: 8px; padding: 10px 14px; margin-bottom: 10px;
+  font-size: 12px; color: var(--txm); line-height: 1.65;
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.why-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Tip cards for precautions ── */
+.tip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.tip-card {
+  background: rgba(13,18,32,.8); border: 1px solid rgba(0,245,200,.09);
+  border-radius: 10px; padding: 14px 16px; transition: 0.2s;
+}
+.tip-card:hover { border-color: rgba(0,245,200,.22); }
+.tip-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.tip-emoji { font-size: 20px; }
+.tip-name { font-weight: 800; color: #fff; font-size: 12px; }
+.tip-desc { font-size: 11px; color: var(--txm); line-height: 1.65; }
+
+/* ── Priority Roadmap ── */
+.roadmap { display: flex; flex-direction: column; gap: 0; }
+.roadmap-step {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid rgba(0,245,200,.06);
+  position: relative;
+}
+.roadmap-step:last-child { border-bottom: none; }
+.roadmap-num-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.roadmap-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 900;
+}
+.roadmap-num.urgent { background: rgba(255,60,60,.15); color: #ff5555; border: 1px solid rgba(255,60,60,.4); }
+.roadmap-num.important { background: rgba(255,107,157,.12); color: var(--rose); border: 1px solid rgba(255,107,157,.3); }
+.roadmap-num.soon { background: rgba(255,179,71,.1); color: var(--peach); border: 1px solid rgba(255,179,71,.3); }
+.roadmap-num.later { background: rgba(0,245,200,.08); color: var(--cy); border: 1px solid rgba(0,245,200,.25); }
+.roadmap-connector {
+  width: 2px; flex: 1; min-height: 20px;
+  background: linear-gradient(to bottom, rgba(0,245,200,.2), transparent);
+  margin-top: 4px;
+}
+.roadmap-content { flex: 1; }
+.roadmap-label {
+  font-family: 'Orbitron', monospace; font-size: 7px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px;
+}
+.roadmap-label.urgent   { color: #ff5555; }
+.roadmap-label.important{ color: var(--rose); }
+.roadmap-label.soon     { color: var(--peach); }
+.roadmap-label.later    { color: var(--cy); }
+.roadmap-task { font-size: 13px; color: #fff; font-weight: 600; margin-bottom: 3px; }
+.roadmap-detail { font-size: 11px; color: var(--txm); line-height: 1.6; }
+
+/* ── Empty state ── */
+.empty-sol {
+  text-align: center; padding: 72px 24px;
+  font-size: 14px; color: var(--txd);
+}
+.empty-sol a { color: var(--cy); text-decoration: none; }
+.empty-icon { font-size: 52px; margin-bottom: 16px; }
+
+/* ── Copy toast ── */
+.copy-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(12px);
+  background: rgba(0,245,200,.12); border: 1px solid var(--cy);
+  border-radius: 8px; padding: 9px 22px;
+  font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+  color: var(--cy); letter-spacing: 0.08em; opacity: 0;
+  transition: 0.3s; pointer-events: none; z-index: 999;
+}
+.copy-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Print */
+@media print {
+  nav.db-nav, .sol-back, .cmd-copy, button { display: none !important; }
+  .sol-sec-body { display: block !important; }
+  body { background: #fff !important; color: #000 !important; }
+  :root { --bg2: #fff; --bg3: #f5f5f5; --txm: #444; --txd: #888; --cy: #007a65; --peach: #b86c00; --rose: #c00; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gbg sol-wrap">
+<div class="sol-inner">
+
+  <!-- Top Bar -->
+  <div class="sol-topbar fade-in">
+    <div>
+      <div class="sol-title">🔐 Your Security Fix Guide</div>
+      <div class="sol-subtitle">> Plain-English explanation of every issue & how to fix it</div>
+    </div>
+    <a href="/scanner" class="sol-back">← Back to Scanner</a>
+  </div>
+
+  <!-- Main content injected by JS -->
+  <div id="mainContent">
+    <div class="empty-sol">
+      <div class="empty-icon">🔍</div>
+      No scan data found.<br><br>
+      <a href="/scanner">Run a scan first →</a>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div class="copy-toast" id="copyToast">✓ Copied!</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════════════ */
+function scoreColor(s){ return s>=80?'#00f5c8':s>=50?'#ffb347':'#ff6b9d'; }
+
+function drawRing(canvas, score){
+  const size=110, r=size/2-7, cx=size/2, cy=size/2;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,size,size);
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,245,200,0.08)'; ctx.lineWidth=7; ctx.stroke();
+  if(score>0){
+    const c = scoreColor(score);
+    const g = ctx.createLinearGradient(0,0,size,size);
+    g.addColorStop(0,c); g.addColorStop(1,'#7c4dff');
+    ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+(score/100)*Math.PI*2);
+    ctx.strokeStyle=g; ctx.lineWidth=7; ctx.lineCap='round'; ctx.stroke();
+  }
+}
+
+function riskPill(level, label){
+  const map={critical:'risk-critical',high:'risk-high',medium:'risk-medium',low:'risk-low',ok:'risk-ok'};
+  const l=(level||'low').toLowerCase();
+  return `<span class="issue-risk-pill ${map[l]||'risk-low'}">${label||l.toUpperCase()}</span>`;
+}
+
+function badgeClass(risk){
+  return {critical:'sec-badge-critical',high:'sec-badge-danger',medium:'sec-badge-warn',low:'sec-badge-ok',ok:'sec-badge-ok'}[risk]||'sec-badge-ok';
+}
+
+function copyCmd(el){
+  const txt = el.querySelector('.cmd-text')?.textContent || el.textContent;
+  navigator.clipboard.writeText(txt.trim()).catch(()=>{});
+  const t = document.getElementById('copyToast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function toggleSec(id){
+  document.getElementById('body-'+id)?.classList.toggle('open');
+  document.getElementById('chev-'+id)?.classList.toggle('open');
+}
+
+function cmdLine(text){
+  return `<div class="cmd-line" onclick="copyCmd(this)">
+    <span class="cmd-text">${text}</span>
+    <span class="cmd-copy">📋</span>
+  </div>`;
+}
+
+function section(id, emoji, title, subtitle, badgeTxt, badgeRisk, bodyHtml){
+  return `
+  <div class="sol-section fade-in">
+    <div class="sol-sec-head" onclick="toggleSec('${id}')">
+      <span class="sec-emoji">${emoji}</span>
+      <div class="sec-title-wrap">
+        <div class="sec-title">${title}</div>
+        <div class="sec-subtitle">${subtitle}</div>
+      </div>
+      <span class="sec-badge ${badgeClass(badgeRisk)}">${badgeTxt}</span>
+      <span class="sec-chevron" id="chev-${id}">▼</span>
+    </div>
+    <div class="sol-sec-body" id="body-${id}">${bodyHtml}</div>
+  </div>`;
+}
+
+function whyStrip(text){
+  return `<div class="why-strip"><span class="why-icon">💡</span><span>${text}</span></div>`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   HEALTH CARD
+══════════════════════════════════════════════════════════ */
+function buildHealthCard(score, type, data){
+  const c = scoreColor(score);
+  const verdict = score>=80?'Your security looks solid!': score>=50?'A few things need your attention': 'Action needed — some serious gaps found';
+  const desc = score>=80
+    ? 'Great job! Your site/system is well protected. A few minor improvements will make it even better.'
+    : score>=50
+    ? 'Your setup has some protection but there are gaps that could be exploited. The fixes below are straightforward — most take under 10 minutes.'
+    : 'There are some important security gaps that should be addressed. Don\'t worry — the guide below explains each issue in plain English with step-by-step fixes.';
+
+  let pills = '';
+  if(type==='web'){
+    const hdrs = data.headers||{};
+    const crit = Object.values(hdrs).filter(h=>!h.present&&h.priority==='critical').length;
+    const high = Object.values(hdrs).filter(h=>!h.present&&h.priority==='high').length;
+    if(!data.ssl?.valid) pills+=`<span class="hpill hpill-red">🔴 SSL Broken</span>`;
+    if(crit) pills+=`<span class="hpill hpill-red">🔴 ${crit} Critical Gap${crit>1?'s':''}</span>`;
+    if(high) pills+=`<span class="hpill hpill-orange">🟠 ${high} High Risk</span>`;
+    if(!data.dns?.spf||!data.dns?.dmarc) pills+=`<span class="hpill hpill-yellow">🟡 Email at Risk</span>`;
+    if(!pills) pills=`<span class="hpill hpill-green">✅ Looking Good!</span>`;
+  } else if(type==='net'){
+    const open=data.open_ports||[];
+    const crit=open.filter(p=>p.risk==='critical').length;
+    const high=open.filter(p=>p.risk==='high').length;
+    if(crit) pills+=`<span class="hpill hpill-red">🔴 ${crit} Critical Port${crit>1?'s':''}</span>`;
+    if(high) pills+=`<span class="hpill hpill-orange">🟠 ${high} Risky Port${high>1?'s':''}</span>`;
+    if(!crit&&!high) pills+=`<span class="hpill hpill-green">✅ Ports Look Safe</span>`;
+  } else {
+    const warns=(data.vulnerability_checks||[]).filter(c=>c.status==='warn').length;
+    if(warns) pills+=`<span class="hpill hpill-orange">🟠 ${warns} Warning${warns>1?'s':''}</span>`;
+    else pills+=`<span class="hpill hpill-green">✅ All Checks Clear</span>`;
+  }
+
+  return `
+  <div class="health-card fade-in">
+    <div class="health-score-wrap">
+      <canvas id="healthCanvas" width="110" height="110"></canvas>
+      <div class="health-score-inner">
+        <span class="health-num" style="color:${c}">${score}</span>
+        <span class="health-lbl">/ 100</span>
+      </div>
+    </div>
+    <div class="health-info">
+      <div class="health-verdict">${verdict}</div>
+      <div class="health-desc">${desc}</div>
+      <div class="health-pills">${pills}</div>
+    </div>
+    <button onclick="window.print()" style="align-self:flex-start;background:transparent;border:1px solid rgba(255,179,71,.3);color:var(--peach);padding:9px 16px;border-radius:6px;font-family:'Orbitron',monospace;font-size:8px;font-weight:700;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;display:flex;align-items:center;gap:6px;transition:0.2s;flex-shrink:0">
+      📄 Save as PDF
+    </button>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   WEB SOLUTIONS
+══════════════════════════════════════════════════════════ */
+
+// ── Plain-English header explanations ──
+const HDR_PLAIN = {
+  'Content-Security-Policy':{
+    plain:'This tells the browser which websites are allowed to load resources (images, scripts, etc.) on your page. Without it, attackers can inject malicious code that runs in visitors\' browsers.',
+    analogy:'Think of it like a guest list at the door — only approved sources get in.',
+    steps:['Open your web server config (Nginx or Apache).','Add the header below — it tells browsers only to load content from your own site.','Restart your web server after saving.'],
+    nginx:"add_header Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;\";",
+    apache:"Header always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline';\"",
+    note:'Start with this basic policy, then tighten it over time. Test first in a staging environment.'
+  },
+  'Strict-Transport-Security':{
+    plain:'This tells browsers to always use the secure (HTTPS) version of your site — even if someone types just "http://". Without it, users can be tricked into using an insecure connection.',
+    analogy:'Like a sign on your door saying "Always use the secure entrance."',
+    steps:['Make sure your SSL certificate is working first (HTTPS must work).','Add the header below to your server config.','Restart your web server.'],
+    nginx:'add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";',
+    apache:'Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"',
+    note:'Only add this after HTTPS is fully working — it\'s hard to undo once browsers cache it.'
+  },
+  'X-Frame-Options':{
+    plain:'This stops your website from being loaded inside another website\'s frame or popup. Without it, attackers can overlay invisible buttons on your site to trick users into clicking things they didn\'t mean to.',
+    analogy:'Like a window that can\'t be put inside another window.',
+    steps:['Add the header below to your server config.','Restart your web server.'],
+    nginx:'add_header X-Frame-Options "SAMEORIGIN";',
+    apache:'Header always set X-Frame-Options "SAMEORIGIN"',
+    note:'SAMEORIGIN allows your own pages to frame each other but blocks external sites.'
+  },
+  'X-Content-Type-Options':{
+    plain:'This stops browsers from guessing the type of file being loaded. Without it, a file uploaded as an image could be interpreted as executable code.',
+    analogy:'Like labelling every package clearly so the post office doesn\'t open the wrong one.',
+    steps:['Add the header below to your server config.','Restart your web server.'],
+    nginx:'add_header X-Content-Type-Options "nosniff";',
+    apache:'Header always set X-Content-Type-Options "nosniff"',
+    note:'One of the easiest wins — just one line in your config.'
+  },
+  'Referrer-Policy':{
+    plain:'This controls what information your website shares with other sites when a visitor clicks a link to leave. Without it, private URLs or user data in your URLs can leak to third parties.',
+    analogy:'Like deciding how much of your address to write on a postcard.',
+    steps:['Add the header below to your server config.','Restart your web server.'],
+    nginx:'add_header Referrer-Policy "strict-origin-when-cross-origin";',
+    apache:'Header always set Referrer-Policy "strict-origin-when-cross-origin"',
+    note:'This setting shares the origin (domain) for cross-site links but nothing else.'
+  },
+  'Permissions-Policy':{
+    plain:'This controls which browser features (camera, microphone, location) your site can access. Without it, third-party scripts on your site could silently request these permissions.',
+    analogy:'Like setting which apps on your phone can use the microphone.',
+    steps:['Add the header below to your server config.','Restart your web server.'],
+    nginx:'add_header Permissions-Policy "geolocation=(), microphone=(), camera=()";',
+    apache:'Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"',
+    note:'These settings disable camera, microphone and location access entirely. Only add features you actually need.'
+  },
+  'Cross-Origin-Resource-Policy':{
+    plain:'This prevents other websites from loading your images, scripts or other files directly. Without it, your resources can be embedded by malicious third-party sites.',
+    analogy:'Like watermarking your photos so others can\'t use them on their site.',
+    steps:['Add the header below to your server config.','Restart your web server.'],
+    nginx:'add_header Cross-Origin-Resource-Policy "same-origin";',
+    apache:'Header always set Cross-Origin-Resource-Policy "same-origin"',
+    note:'Use "cross-origin" if you intentionally serve fonts/images to other sites (like a CDN).'
+  },
+  'X-XSS-Protection':{
+    plain:'This is an older security feature for Internet Explorer that can block some XSS attacks. Modern browsers rely on Content-Security-Policy instead, but adding this helps older browser users.',
+    analogy:'Like adding an older style lock in addition to a modern deadbolt.',
+    steps:['Add the header below to your server config.','Restart your web server.'],
+    nginx:'add_header X-XSS-Protection "1; mode=block";',
+    apache:'Header always set X-XSS-Protection "1; mode=block"',
+    note:'Low priority — Content-Security-Policy is the modern replacement. But this is still a quick win.'
+  }
+};
+
+const PORT_PLAIN = {
+  21:{name:'FTP (File Transfer)',danger:'FTP sends your username and password as plain text — anyone on the same network can read them like a postcard.',fix:'Switch to SFTP (encrypted file transfer). Completely block FTP.',urgent:true},
+  23:{name:'Telnet (Remote Terminal)',danger:'Telnet is ancient and completely unencrypted. Every command you type, including passwords, is visible to anyone watching network traffic.',fix:'Delete Telnet entirely. Use SSH instead — it does the same thing but securely.',urgent:true},
+  3306:{name:'MySQL Database',danger:'Your database is visible to the entire internet. Anyone can attempt to log in and access all your data.',fix:'Restrict MySQL so it only accepts connections from your own server (localhost).',urgent:true},
+  5432:{name:'PostgreSQL Database',danger:'Your database is visible to the entire internet. Anyone can attempt to log in.',fix:'Change the database config to only listen on localhost.',urgent:true},
+  6379:{name:'Redis (Cache)',danger:'Redis has no password by default. If exposed publicly, anyone can read or delete your cached data.',fix:'Add a strong password to Redis and restrict it to localhost.',urgent:true},
+  27017:{name:'MongoDB Database',danger:'MongoDB had no authentication by default in older versions. Thousands of databases have been wiped by attackers this way.',fix:'Bind MongoDB to localhost and enable authentication.',urgent:true},
+  8080:{name:'Alternative HTTP Port',danger:'A second HTTP server is running. This could be a development server accidentally left running in production, with weaker security.',fix:'Stop the service running on 8080 if it\'s not needed, or route it through Nginx with proper security headers.',urgent:false},
+  445:{name:'SMB (Windows File Sharing)',danger:'SMB is the protocol behind WannaCry ransomware. Exposing this to the internet is extremely dangerous.',fix:'Block this port at your firewall immediately. Never expose SMB to the internet.',urgent:true},
+  3389:{name:'RDP (Windows Remote Desktop)',danger:'RDP is one of the most attacked services on the internet. Attackers constantly scan for open RDP ports and attempt to break in.',fix:'Use a VPN to access your server remotely instead of exposing RDP directly.',urgent:true},
+};
+
+function buildWebSec(data){
+  const hdrs = data.headers||{};
+  const missing = Object.entries(hdrs).filter(([,v])=>!v.present);
+  const ports = data.ports||[];
+  const dns = data.dns||{};
+  const ssl = data.ssl||{};
+  const sections = [];
+
+  /* ── SSL ── */
+  let sslBody = '';
+  if(ssl.valid){
+    sslBody = `
+    <div class="issue-card">
+      <div class="issue-status-row">
+        <span class="issue-icon">✅</span>
+        <div class="issue-title-area">
+          <div class="issue-name">Your SSL Certificate is Active</div>
+          <div class="issue-plain-desc">Your website uses HTTPS — all data between your server and visitors is encrypted. ${ssl.expires_in_days!=null?`Certificate expires in <strong style="color:${ssl.expires_in_days<30?'var(--rose)':'var(--cy)'}">${ssl.expires_in_days} days</strong>.`:''}</div>
+        </div>
+        ${riskPill('ok','SECURE')}
+      </div>
+      ${ssl.expires_in_days!=null && ssl.expires_in_days < 30 ? `
+      <div class="fix-block">
+        <div class="fix-block-title">⚠️ Renew Your Certificate Soon</div>
+        ${whyStrip('Your certificate expires in under 30 days. When it expires, visitors will see a scary warning page and may leave.')}
+        <div class="fix-step"><div class="fix-step-num">1</div><div class="fix-step-text">Run this command on your server to renew:</div></div>
+        ${cmdLine('sudo certbot renew --nginx')}
+        <div class="fix-note">Certbot will handle the renewal automatically. Set up a cron job to run this monthly.</div>
+      </div>` : ''}
+    </div>`;
+  } else {
+    sslBody = `
+    <div class="issue-card">
+      <div class="issue-status-row">
+        <span class="issue-icon">❌</span>
+        <div class="issue-title-area">
+          <div class="issue-name">No Valid SSL Certificate</div>
+          <div class="issue-plain-desc">Your website is not using HTTPS. All data sent between visitors and your site (including passwords and form submissions) is visible to anyone intercepting the connection.</div>
+        </div>
+        ${riskPill('critical','URGENT')}
+      </div>
+      ${whyStrip('Think of SSL as a sealed envelope — without it, your letters are on a postcard anyone can read.')}
+      <div class="fix-block">
+        <div class="fix-block-title">🔧 How to Get a Free SSL Certificate</div>
+        <div class="fix-step"><div class="fix-step-num">1</div><div class="fix-step-text">Install Certbot (the free SSL tool):</div></div>
+        ${cmdLine('sudo apt install certbot python3-certbot-nginx')}
+        <div class="fix-step"><div class="fix-step-num">2</div><div class="fix-step-text">Get your free certificate (replace with your domain):</div></div>
+        ${cmdLine('sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com')}
+        <div class="fix-step"><div class="fix-step-num">3</div><div class="fix-step-text">Test that automatic renewal works:</div></div>
+        ${cmdLine('sudo certbot renew --dry-run')}
+        <div class="fix-note"><strong>That's it!</strong> Certbot sets up automatic renewal. The whole process takes about 5 minutes.</div>
+      </div>
+    </div>`;
+  }
+  const sslRisk = ssl.valid ? (ssl.expires_in_days!=null&&ssl.expires_in_days<30?'medium':'ok') : 'critical';
+  sections.push(section('ssl','🔒','SSL Encryption', ssl.valid?'Your connection is encrypted':'⚠ No encryption found', ssl.valid?(ssl.expires_in_days<30?'Renew Soon':'Secure'):'Fix Immediately', sslRisk, sslBody));
+
+  /* ── HEADERS ── */
+  let hdrBody = '';
+  if(missing.length===0){
+    hdrBody=`<div class="issue-card"><div class="issue-status-row"><span class="issue-icon">✅</span><div class="issue-title-area"><div class="issue-name">All Security Headers Present</div><div class="issue-plain-desc">Your web server is sending all the recommended security instructions to browsers. Well done!</div></div>${riskPill('ok','ALL CLEAR')}</div></div>`;
+  } else {
+    hdrBody = missing.map(([name, h])=>{
+      const p = HDR_PLAIN[name]||{plain:'This security header is missing.',analogy:'',steps:['Add the header to your web server config.'],nginx:`add_header ${name} "value";`,apache:`Header always set ${name} "value"`,note:''};
+      return `
+      <div class="issue-card">
+        <div class="issue-status-row">
+          <span class="issue-icon">❌</span>
+          <div class="issue-title-area">
+            <div class="issue-name">${name}</div>
+            <div class="issue-plain-desc">${p.plain}</div>
+          </div>
+          ${riskPill(h.priority)}
+        </div>
+        ${p.analogy?whyStrip('💭 '+p.analogy):''}
+        <div class="fix-block">
+          <div class="fix-block-title">🔧 How to Fix (takes ~2 minutes)</div>
+          ${p.steps.map((s,i)=>`<div class="fix-step"><div class="fix-step-num">${i+1}</div><div class="fix-step-text">${s}</div></div>`).join('')}
+          <div style="margin-top:10px;margin-bottom:4px;font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:var(--cy);letter-spacing:0.08em">FOR NGINX:</div>
+          ${cmdLine(p.nginx)}
+          <div style="margin-top:8px;margin-bottom:4px;font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:var(--cy);letter-spacing:0.08em">FOR APACHE:</div>
+          ${cmdLine(p.apache)}
+          ${p.note?`<div class="fix-note">💡 ${p.note}</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  const topHdr = missing.some(([,v])=>v.priority==='critical')?'critical':missing.some(([,v])=>v.priority==='high')?'high':missing.length?'medium':'ok';
+  sections.push(section('hdr','🛡','Browser Security Instructions','HTTP Security Headers', missing.length?`${missing.length} Missing`:'All Present', topHdr, hdrBody));
+
+  /* ── PORTS ── */
+  const riskyPorts = ports.filter(p=>p.risk!=='low');
+  let portBody = '';
+  if(riskyPorts.length===0){
+    portBody=`<div class="issue-card"><div class="issue-status-row"><span class="issue-icon">✅</span><div class="issue-title-area"><div class="issue-name">No Dangerous Open Ports</div><div class="issue-plain-desc">All detected open ports appear safe and expected for a web server.</div></div>${riskPill('ok','SAFE')}</div></div>`;
+  } else {
+    portBody = riskyPorts.map(p=>{
+      const pp = PORT_PLAIN[p.port]||{name:p.service,danger:'This port is open to the internet and could be exploited.',fix:'Close this port if it\'s not needed. If required, restrict access with a firewall.',urgent:false};
+      return `
+      <div class="issue-card">
+        <div class="issue-status-row">
+          <span class="issue-icon">${p.risk==='critical'?'🚨':p.risk==='high'?'⛔':'⚠️'}</span>
+          <div class="issue-title-area">
+            <div class="issue-name">Port ${p.port} — ${pp.name} is Open</div>
+            <div class="issue-plain-desc">${pp.danger}</div>
+          </div>
+          ${riskPill(p.risk)}
+        </div>
+        <div class="fix-block">
+          <div class="fix-block-title">🔧 How to Close This Port</div>
+          <div class="fix-step"><div class="fix-step-num">1</div><div class="fix-step-text">Block the port using your firewall (UFW):</div></div>
+          ${cmdLine(`sudo ufw deny ${p.port}/tcp`)}
+          <div class="fix-step"><div class="fix-step-num">2</div><div class="fix-step-text">Reload the firewall and check:</div></div>
+          ${cmdLine('sudo ufw reload && sudo ufw status')}
+          <div class="fix-note">💡 ${pp.fix}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  const topPort = riskyPorts.some(p=>p.risk==='critical')?'critical':riskyPorts.some(p=>p.risk==='high')?'high':riskyPorts.length?'medium':'ok';
+  sections.push(section('ports','🔌','Open Network Doors','Port Security', riskyPorts.length?`${riskyPorts.length} Risky Port${riskyPorts.length>1?'s':''}`:'Safe', topPort, portBody));
+
+  /* ── DNS / EMAIL ── */
+  let dnsBody = '';
+  if(!dns.spf) dnsBody += `
+    <div class="issue-card">
+      <div class="issue-status-row">
+        <span class="issue-icon">❌</span>
+        <div class="issue-title-area">
+          <div class="issue-name">Anyone Can Send Emails Pretending to Be You</div>
+          <div class="issue-plain-desc">Without an SPF record, there's nothing stopping someone from sending emails that look like they came from your domain — a technique called email spoofing. This is used in phishing attacks.</div>
+        </div>
+        ${riskPill('high')}
+      </div>
+      ${whyStrip('💭 Like someone forging your return address on a letter — your recipients have no way to know it\'s fake.')}
+      <div class="fix-block">
+        <div class="fix-block-title">🔧 Add an SPF Record (DNS Setting)</div>
+        <div class="fix-step"><div class="fix-step-num">1</div><div class="fix-step-text">Log in to wherever you manage your domain's DNS (GoDaddy, Cloudflare, Namecheap, etc.)</div></div>
+        <div class="fix-step"><div class="fix-step-num">2</div><div class="fix-step-text">Add a new <strong>TXT record</strong> on your root domain (@) with this value:</div></div>
+        ${cmdLine('v=spf1 include:_spf.google.com ~all')}
+        <div class="fix-step"><div class="fix-step-num">3</div><div class="fix-step-text">Save the record. DNS changes take a few minutes to a few hours to take effect.</div></div>
+        <div class="fix-note">💡 Replace <strong>_spf.google.com</strong> with your actual email provider's SPF address if you're not using Google Workspace.</div>
+      </div>
+    </div>`;
+  if(!dns.dmarc) dnsBody += `
+    <div class="issue-card">
+      <div class="issue-status-row">
+        <span class="issue-icon">❌</span>
+        <div class="issue-title-area">
+          <div class="issue-name">No Email Abuse Reporting Configured</div>
+          <div class="issue-plain-desc">Without a DMARC record, even if someone tries to spoof your email, you won't receive any reports about it. DMARC lets you tell email providers what to do with suspicious emails claiming to be from you.</div>
+        </div>
+        ${riskPill('medium')}
+      </div>
+      <div class="fix-block">
+        <div class="fix-block-title">🔧 Add a DMARC Record (DNS Setting)</div>
+        <div class="fix-step"><div class="fix-step-num">1</div><div class="fix-step-text">In your DNS settings, add a <strong>TXT record</strong> on <code>_dmarc.yourdomain.com</code> with this value:</div></div>
+        ${cmdLine('v=DMARC1; p=quarantine; rua=mailto:dmarc@yourdomain.com; pct=100')}
+        <div class="fix-note">💡 Start with <strong>p=none</strong> (just monitoring) then switch to <strong>p=quarantine</strong> once you're happy with the results. Change the email to your real address.</div>
+      </div>
+    </div>`;
+  if(!dnsBody) dnsBody=`<div class="issue-card"><div class="issue-status-row"><span class="issue-icon">✅</span><div class="issue-title-area"><div class="issue-name">Email Security is Configured</div><div class="issue-plain-desc">SPF and DMARC records are in place — your domain is protected against email spoofing.</div></div>${riskPill('ok','PROTECTED')}</div></div>`;
+  sections.push(section('dns','📧','Email Security','Prevent others from faking emails from your domain',(!dns.spf||!dns.dmarc)?'Issues Found':'Secure',!dns.spf?'high':!dns.dmarc?'medium':'ok',dnsBody));
+
+  /* ── PRECAUTIONS ── */
+  const tips = [
+    {icon:'🔄',name:'Keep Software Updated',desc:'Run <code>sudo apt update && sudo apt upgrade -y</code> every week. Most hacks exploit known vulnerabilities in old software.'},
+    {icon:'🔑',name:'Use SSH Keys (Not Passwords)',desc:'Password logins can be brute-forced. SSH keys are practically unbreakable. Set <code>PasswordAuthentication no</code> in <code>/etc/ssh/sshd_config</code>.'},
+    {icon:'🛡',name:'Enable a Firewall',desc:'Run <code>sudo ufw enable</code> to turn on Ubuntu\'s firewall. Only allow ports 22 (SSH), 80 (HTTP) and 443 (HTTPS).'},
+    {icon:'🚫',name:'Block Repeated Failed Logins',desc:'Install Fail2Ban: <code>sudo apt install fail2ban</code>. It automatically blocks IPs that try too many wrong passwords.'},
+    {icon:'📊',name:'Check Your Logs',desc:'Regularly review <code>/var/log/nginx/access.log</code> and <code>/var/log/auth.log</code> for suspicious activity.'},
+    {icon:'💾',name:'Back Up Your Data',desc:'Automate encrypted backups offsite. If you get hacked or hit by ransomware, backups are your safety net.'},
+    {icon:'🔒',name:'Use Strong TLS Only',desc:'Disable TLS 1.0 and 1.1 in your server config. Only allow TLS 1.2 and 1.3.'},
+    {icon:'🔍',name:'Scan Regularly',desc:'Security isn\'t a one-time fix. Re-scan every 30 days or after major changes.'},
+  ];
+  const tipsBody = `<div class="tip-grid">${tips.map(t=>`
+    <div class="tip-card">
+      <div class="tip-head"><span class="tip-emoji">${t.icon}</span><span class="tip-name">${t.name}</span></div>
+      <div class="tip-desc">${t.desc}</div>
+    </div>`).join('')}</div>`;
+  sections.push(section('tips','💡','General Security Tips','Good habits that protect you long-term','Recommended','medium',tipsBody));
+
+  /* ── ROADMAP ── */
+  const roadmapSteps = [];
+  if(!ssl.valid) roadmapSteps.push({priority:'urgent',task:'Install SSL Certificate',detail:'Run the certbot commands above. Takes 5 minutes and is completely free.'});
+  const critHdrs = missing.filter(([,v])=>v.priority==='critical').map(([k])=>k);
+  if(critHdrs.length) roadmapSteps.push({priority:'urgent',task:`Add critical security headers: ${critHdrs.join(', ')}`,detail:'Copy the Nginx/Apache lines above into your server config, then restart.'});
+  const highHdrs = missing.filter(([,v])=>v.priority==='high').map(([k])=>k);
+  if(highHdrs.length) roadmapSteps.push({priority:'important',task:`Add high-priority headers: ${highHdrs.join(', ')}`,detail:'Same process as critical headers — just more lines to add.'});
+  const critPorts = riskyPorts.filter(p=>p.risk==='critical');
+  if(critPorts.length) roadmapSteps.push({priority:'urgent',task:`Close dangerous ports: ${critPorts.map(p=>p.port).join(', ')}`,detail:'Use the UFW commands in the Ports section above.'});
+  if(!dns.spf) roadmapSteps.push({priority:'important',task:'Add SPF DNS record',detail:'Log in to your DNS provider and add the TXT record from the Email Security section.'});
+  if(!dns.dmarc) roadmapSteps.push({priority:'soon',task:'Add DMARC DNS record',detail:'Add the DMARC TXT record to monitor and protect your email domain.'});
+  const medHdrs = missing.filter(([,v])=>v.priority==='medium').map(([k])=>k);
+  if(medHdrs.length) roadmapSteps.push({priority:'soon',task:`Add medium-priority headers: ${medHdrs.join(', ')}`,detail:'Good improvements to add after the urgent fixes are done.'});
+  roadmapSteps.push({priority:'later',task:'Set up Fail2Ban and automated updates',detail:'Install Fail2Ban and configure unattended-upgrades for ongoing protection.'});
+  roadmapSteps.push({priority:'later',task:'Re-scan in 30 days',detail:'After applying fixes, run another scan to confirm everything is resolved.'});
+
+  const roadmapBody = `<div class="roadmap">${roadmapSteps.map((s,i)=>`
+    <div class="roadmap-step">
+      <div class="roadmap-num-wrap">
+        <div class="roadmap-num ${s.priority}">${i+1}</div>
+        ${i<roadmapSteps.length-1?'<div class="roadmap-connector"></div>':''}
+      </div>
+      <div class="roadmap-content">
+        <div class="roadmap-label ${s.priority}">${s.priority==='urgent'?'🔴 Do Today':s.priority==='important'?'🟠 Do This Week':s.priority==='soon'?'🟡 Do This Month':'🟢 Ongoing'}</div>
+        <div class="roadmap-task">${s.task}</div>
+        <div class="roadmap-detail">${s.detail}</div>
+      </div>
+    </div>`).join('')}</div>`;
+  sections.push(section('roadmap','📋','Your Fix Roadmap','Prioritised step-by-step action plan','Action Plan','medium',roadmapBody));
+
+  return sections.join('');
+}
+
+/* ══════════════════════════════════════════════════════════
+   NETWORK SOLUTIONS
+══════════════════════════════════════════════════════════ */
+function buildNetSec(data){
+  const ports = data.open_ports||[];
+  const sections = [];
+
+  let portBody = '';
+  if(ports.length===0){
+    portBody=`<div class="issue-card"><div class="issue-status-row"><span class="issue-icon">✅</span><div class="issue-title-area"><div class="issue-name">No Open Ports Found</div><div class="issue-plain-desc">No publicly accessible ports were detected on this IP address.</div></div>${riskPill('ok','CLEAN')}</div></div>`;
+  } else {
+    portBody = ports.map(p=>{
+      const pp = PORT_PLAIN[p.port]||{name:p.service,danger:`Port ${p.port} is open. Verify if this is intentional and required.`,fix:'Close with UFW if not needed.',urgent:false};
+      const icon = p.risk==='critical'?'🚨':p.risk==='high'?'⛔':p.risk==='medium'?'⚠️':'ℹ️';
+      return `
+      <div class="issue-card">
+        <div class="issue-status-row">
+          <span class="issue-icon">${icon}</span>
+          <div class="issue-title-area">
+            <div class="issue-name">Port ${p.port} — ${pp.name || p.service}</div>
+            <div class="issue-plain-desc">${pp.danger}${p.banner?` <em style="color:var(--txd)">[Banner: ${p.banner.slice(0,60)}]</em>`:''}</div>
+          </div>
+          ${riskPill(p.risk)}
+        </div>
+        <div class="fix-block">
+          <div class="fix-block-title">🔧 How to Close This Port</div>
+          <div class="fix-step"><div class="fix-step-num">1</div><div class="fix-step-text">Block the port with UFW firewall:</div></div>
+          ${cmdLine(`sudo ufw deny ${p.port}/tcp`)}
+          <div class="fix-step"><div class="fix-step-num">2</div><div class="fix-step-text">Apply and verify:</div></div>
+          ${cmdLine('sudo ufw reload && sudo ufw status')}
+          <div class="fix-note">💡 ${pp.fix}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  const topRisk = ports.some(p=>p.risk==='critical')?'critical':ports.some(p=>p.risk==='high')?'high':ports.length?'medium':'ok';
+  sections.push(section('ports','🔌','Open Ports Found','What\'s visible from the internet',ports.length?`${ports.length} Port${ports.length>1?'s':''} Open`:'Clean',topRisk,portBody));
+
+  const fwBody = `
+  <div class="issue-card">
+    <div class="issue-name" style="margin-bottom:8px">Set Up Your Firewall in 5 Steps</div>
+    <div class="issue-plain-desc" style="margin-bottom:14px">A firewall is a door policy for your server — it decides which connections to let in and which to block. These commands set a secure default on Ubuntu/Debian.</div>
+    ${[
+      ['Block everything by default',`sudo ufw default deny incoming`],
+      ['Allow outgoing traffic (your server can still reach the internet)',`sudo ufw default allow outgoing`],
+      ['Allow SSH so you can still log in',`sudo ufw allow 22/tcp`],
+      ['Allow web traffic',`sudo ufw allow 80/tcp && sudo ufw allow 443/tcp`],
+      ['Turn on the firewall',`sudo ufw enable && sudo ufw status`],
+    ].map(([label,cmd],i)=>`
+      <div class="fix-step" style="flex-direction:column;align-items:stretch;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="fix-step-num">${i+1}</div>
+          <div class="fix-step-text">${label}</div>
+        </div>
+        ${cmdLine(cmd)}
+      </div>`).join('')}
+  </div>`;
+  sections.push(section('fw','🛡','Firewall Setup Guide','Essential commands to secure your network','Guide','medium',fwBody));
+
+  const tips=[
+    {icon:'🔐',name:'Use SSH Keys',desc:'Disable password login for SSH. Use key-based authentication only.'},
+    {icon:'📡',name:'VPN for Admin Access',desc:'Instead of exposing SSH/RDP/database ports, connect via a VPN tunnel.'},
+    {icon:'🚫',name:'Install Fail2Ban',desc:'Auto-blocks IPs that try too many failed logins: <code>sudo apt install fail2ban</code>'},
+    {icon:'🔄',name:'Patch Regularly',desc:'<code>sudo apt update && sudo apt dist-upgrade -y</code> — keep all services up to date.'},
+    {icon:'📊',name:'Monitor Traffic',desc:'Look at <code>/var/log/auth.log</code> for unusual login attempts.'},
+    {icon:'🔒',name:'Network Segmentation',desc:'Keep databases on a private network — never reachable from the internet.'},
+  ];
+  sections.push(section('tips','💡','Security Best Practices','Ongoing habits for a secure server','Recommended','medium',`<div class="tip-grid">${tips.map(t=>`<div class="tip-card"><div class="tip-head"><span class="tip-emoji">${t.icon}</span><span class="tip-name">${t.name}</span></div><div class="tip-desc">${t.desc}</div></div>`).join('')}</div>`));
+
+  return sections.join('');
+}
+
+/* ══════════════════════════════════════════════════════════
+   SYSTEM SOLUTIONS
+══════════════════════════════════════════════════════════ */
+function buildSysSec(data){
+  const checks = data.vulnerability_checks||[];
+  const sections = [];
+
+  const checkBody = checks.map(c=>{
+    const isWarn = c.status==='warn';
+    const icon = isWarn?'⚠️':'✅';
+    const explanations = {
+      'CPU Usage':{ok:'CPU load is normal.',warn:'CPU usage is very high. This could mean a runaway process, a crypto miner, or your server is under load.'},
+      'Memory Usage':{ok:'Memory usage is healthy.',warn:'Memory is nearly full. Your server may start swapping to disk which slows everything down significantly.'},
+      'Disk Usage':{ok:'Disk space is fine.',warn:'Disk is almost full. When it fills up completely, your server will stop writing logs and may crash services.'},
+      'Running Processes':{ok:'Process count is normal.',warn:'Unusually high number of running processes. Could indicate a fork bomb or a compromised service spawning processes.'},
+    };
+    const exp = explanations[c.check]||{ok:'Within normal range.',warn:'Exceeds recommended threshold.'};
+    return `
+    <div class="issue-card">
+      <div class="issue-status-row">
+        <span class="issue-icon">${icon}</span>
+        <div class="issue-title-area">
+          <div class="issue-name">${c.check}: <span style="color:${isWarn?'var(--peach)':'var(--cy)'}">${c.value}</span></div>
+          <div class="issue-plain-desc">${isWarn?exp.warn:exp.ok}</div>
+        </div>
+        ${riskPill(isWarn?'medium':'ok',isWarn?'WARNING':'OK')}
+      </div>
+      ${isWarn?`<div class="fix-block">
+        <div class="fix-block-title">🔧 How to Investigate</div>
+        ${c.check==='CPU Usage'?`
+          <div class="fix-step"><div class="fix-step-num">1</div><div class="fix-step-text">See which processes are using the most CPU:</div></div>
+          ${cmdLine('ps aux --sort=-%cpu | head -20')}
+          <div class="fix-step"><div class="fix-step-num">2</div><div class="fix-step-text">To kill a misbehaving process (replace PID with the number from the list):</div></div>
+          ${cmdLine('sudo kill -9 PID')}`:
+        c.check==='Memory Usage'?`
+          <div class="fix-step"><div class="fix-step-num">1</div><div class="fix-step-text">Check memory usage by process:</div></div>
+          ${cmdLine('free -h && ps aux --sort=-%mem | head -10')}`:
+        c.check==='Disk Usage'?`
+          <div class="fix-step"><div class="fix-step-num">1</div><div class="fix-step-text">Find what's taking up disk space:</div></div>
+          ${cmdLine("du -sh /* 2>/dev/null | sort -rh | head -20")}
+          <div class="fix-step"><div class="fix-step-num">2</div><div class="fix-step-text">Clean up old system logs:</div></div>
+          ${cmdLine('sudo journalctl --vacuum-time=7d')}
+          <div class="fix-step"><div class="fix-step-num">3</div><div class="fix-step-text">Remove unused software packages:</div></div>
+          ${cmdLine('sudo apt autoremove -y')}`:
+        `<div class="fix-step"><div class="fix-step-num">1</div><div class="fix-step-text">List all running services:</div></div>
+          ${cmdLine('systemctl list-units --type=service --state=active')}`}
+      </div>`:''}
+    </div>`;
+  }).join('');
+  sections.push(section('checks','🔍','System Health Checks','What\'s happening on your server right now',checks.some(c=>c.status==='warn')?'Warnings Found':'All Clear',checks.some(c=>c.status==='warn')?'medium':'ok',checkBody));
+
+  const hardenBody = `
+  <div class="issue-card">
+    <div class="issue-name" style="margin-bottom:8px">Run This Hardening Checklist</div>
+    <div class="issue-plain-desc" style="margin-bottom:14px">These commands set up baseline security on a fresh Linux server. Run them in order — they take about 10 minutes total.</div>
+    ${[
+      ['Install essential security tools',`sudo apt install -y ufw fail2ban unattended-upgrades rkhunter`],
+      ['Set firewall to block everything by default',`sudo ufw default deny incoming && sudo ufw default allow outgoing`],
+      ['Allow only necessary ports',`sudo ufw allow ssh && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp`],
+      ['Enable the firewall',`sudo ufw enable`],
+      ['Disable SSH password logins (use keys only)',`echo 'PasswordAuthentication no' | sudo tee -a /etc/ssh/sshd_config && sudo systemctl restart ssh`],
+      ['Enable Fail2Ban (auto-blocks attackers)',`sudo systemctl enable --now fail2ban`],
+      ['Scan for rootkits',`sudo rkhunter --update && sudo rkhunter --check --skip-keypress`],
+    ].map(([label,cmd],i)=>`
+      <div class="fix-step" style="flex-direction:column;align-items:stretch;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="fix-step-num">${i+1}</div>
+          <div class="fix-step-text">${label}</div>
+        </div>
+        ${cmdLine(cmd)}
+      </div>`).join('')}
+  </div>`;
+  sections.push(section('harden','⚙️','Server Hardening Guide','Step-by-step commands to secure your server','How-To Guide','medium',hardenBody));
+
+  const tips=[
+    {icon:'👤',name:'Don\'t Run as Root',desc:'Create a separate user for daily tasks. Root access should be rare and audited.'},
+    {icon:'📝',name:'Enable Audit Logging',desc:'<code>sudo apt install auditd && sudo systemctl enable auditd</code> — logs all security-relevant system calls.'},
+    {icon:'🔑',name:'Review sudo Access',desc:'Check who has admin access: <code>sudo cat /etc/sudoers</code>. Remove anyone who shouldn\'t have it.'},
+    {icon:'💾',name:'Automate Backups',desc:'Use rsync or borgbackup for encrypted offsite backups. Test restores quarterly.'},
+    {icon:'🌡',name:'Set Up Monitoring',desc:'Install netdata for live resource monitoring — catch problems before they become outages.'},
+    {icon:'🔍',name:'Regular Rootkit Scans',desc:'<code>sudo rkhunter --check</code> periodically to detect if your system has been compromised.'},
+  ];
+  sections.push(section('tips','💡','Security Habits','Ongoing practices for a healthy server','Recommended','medium',`<div class="tip-grid">${tips.map(t=>`<div class="tip-card"><div class="tip-head"><span class="tip-emoji">${t.icon}</span><span class="tip-name">${t.name}</span></div><div class="tip-desc">${t.desc}</div></div>`).join('')}</div>`));
+
+  return sections.join('');
+}
+
+/* ══════════════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════════════ */
+function renderAll(type, data){
+  const main = document.getElementById('mainContent');
+  const healthHtml = buildHealthCard(data.score||0, type, data);
+  const sectionsHtml = type==='web' ? buildWebSec(data) : type==='net' ? buildNetSec(data) : buildSysSec(data);
+  main.innerHTML = healthHtml + sectionsHtml;
+
+  setTimeout(()=>{
+    const canvas = document.getElementById('healthCanvas');
+    if(canvas) drawRing(canvas, data.score||0);
+    // Open first section
+    const firstBody = document.querySelector('.sol-sec-body');
+    const firstChev = document.querySelector('.sec-chevron');
+    if(firstBody) firstBody.classList.add('open');
+    if(firstChev) firstChev.classList.add('open');
+  }, 80);
+}
+
+(function init(){
+  const raw = sessionStorage.getItem('darkblend_scan');
+  if(!raw) return;
+  try{
+    const {type, data} = JSON.parse(raw);
+    renderAll(type, data);
+  } catch(e){
+    document.getElementById('mainContent').innerHTML=`<div class="empty-sol"><div class="empty-icon">⚠️</div>Error reading scan data.<br><br><a href="/scanner">Run a new scan →</a></div>`;
+  }
+})();
+</script>
+{% endblock %}

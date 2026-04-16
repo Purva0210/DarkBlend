@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}DarkBlend — Account{% endblock %}
+
+{% block extra_head %}
+<style>
+.dash-wrap{min-height:calc(100vh - 58px);padding:28px}
+.dash-inner{max-width:860px;margin:0 auto}
+
+/* Profile */
+.profile-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:24px;flex-wrap:wrap;gap:12px
+}
+.profile-info{display:flex;align-items:center;gap:16px}
+.profile-avatar{
+  width:56px;height:56px;border-radius:12px;
+  background:linear-gradient(135deg,var(--lavD),var(--roseD));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:#fff;font-weight:900;flex-shrink:0
+}
+.profile-name{
+  font-family:'Orbitron',monospace;font-size:14px;font-weight:900;
+  color:#fff;letter-spacing:0.06em;text-transform:uppercase
+}
+.profile-email{
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  color:var(--txm);margin-top:3px
+}
+.btn-logout{
+  background:transparent;border:1px solid rgba(255,107,157,.3);
+  color:var(--rose);padding:8px 18px;border-radius:4px;
+  font-family:'Orbitron',monospace;font-size:8px;font-weight:700;
+  cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;
+  display:flex;align-items:center;gap:5px;text-decoration:none;transition:0.2s
+}
+.btn-logout:hover{background:rgba(255,107,157,.08)}
+
+/* Stat cards */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.stat-card{
+  background:var(--bg2);border:1px solid rgba(0,245,200,.1);
+  border-radius:14px;padding:20px 16px;text-align:center;
+  cursor:pointer;transition:all 0.25s;position:relative;overflow:hidden
+}
+.stat-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:var(--accent, linear-gradient(90deg,transparent,var(--cy),transparent));
+  transition:0.2s
+}
+.stat-card:hover{transform:translateY(-3px);border-color:var(--card-color, var(--cy))}
+.stat-card-icon{font-size:26px;margin-bottom:8px}
+.stat-card-num{
+  font-family:'Orbitron',monospace;font-size:32px;font-weight:900;
+  margin-bottom:4px;text-shadow:0 0 20px currentColor
+}
+.stat-card-label{
+  font-family:'Orbitron',monospace;font-size:7px;
+  letter-spacing:0.1em;color:var(--txm);text-transform:uppercase
+}
+
+/* Section header */
+.section-hdr{
+  font-family:'Orbitron',monospace;font-size:9px;font-weight:700;
+  color:var(--cy);letter-spacing:0.1em;text-transform:uppercase;
+  margin-bottom:14px;display:flex;align-items:center;gap:8px
+}
+.section-bar{
+  width:2px;height:12px;background:var(--cy);border-radius:1px;
+  box-shadow:0 0 6px var(--cy);display:inline-block
+}
+
+/* History tabs */
+.hist-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.hist-tab{
+  font-family:'Orbitron',monospace;font-size:8px;font-weight:700;
+  padding:6px 14px;border-radius:4px;border:1px solid rgba(0,245,200,.2);
+  background:transparent;color:var(--txm);cursor:pointer;transition:0.2s;
+  letter-spacing:0.08em;text-transform:uppercase
+}
+.hist-tab.active{border-color:var(--cy);color:var(--cy);background:rgba(0,245,200,.06)}
+
+/* History items */
+.hist-item{
+  background:var(--bg2);border:1px solid rgba(0,245,200,.08);
+  border-radius:9px;padding:12px 16px;
+  display:flex;align-items:center;gap:12px;margin-bottom:8px;transition:0.2s
+}
+.hist-item:hover{border-color:rgba(0,245,200,.2)}
+.hist-icon{
+  width:32px;height:32px;background:rgba(0,245,200,.08);
+  border:1px solid var(--bd);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0
+}
+.hist-target{
+  font-family:'Share Tech Mono',monospace;font-size:11px;color:#fff;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.hist-meta{
+  font-family:'Share Tech Mono',monospace;font-size:9px;
+  color:var(--txd);margin-top:2px
+}
+.badge{
+  border-radius:4px;padding:2px 8px;flex-shrink:0;
+  font-family:'Orbitron',monospace;font-size:9px;font-weight:800;
+  letter-spacing:0.06em;text-transform:uppercase
+}
+.badge-low{background:rgba(0,245,200,.08);color:var(--cy);border:1px solid rgba(0,245,200,.2)}
+.badge-medium{background:rgba(255,179,71,.08);color:var(--peach);border:1px solid rgba(255,179,71,.2)}
+.badge-high{background:rgba(255,107,157,.08);color:var(--rose);border:1px solid rgba(255,107,157,.2)}
+
+.empty-state{
+  text-align:center;padding:36px;
+  font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--txd)
+}
+
+/* Scan list table */
+.scan-table{width:100%;margin-bottom:24px}
+.scan-table th{
+  font-family:'Orbitron',monospace;font-size:8px;font-weight:700;
+  color:var(--txm);letter-spacing:0.08em;text-transform:uppercase;
+  padding:8px 12px;border-bottom:1px solid rgba(0,245,200,.1);text-align:left
+}
+.scan-table td{
+  font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txm);
+  padding:10px 12px;border-bottom:1px solid rgba(0,245,200,.05)
+}
+.scan-table tr:hover td{background:rgba(0,245,200,.02)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gbg dash-wrap">
+<div class="dash-inner fade-in">
+
+  <!-- Profile header -->
+  <div class="profile-header">
+    <div class="profile-info">
+      <div class="profile-avatar">{{ user[0].upper() }}</div>
+      <div>
+        <div class="profile-name">{{ user.split('@')[0] }}</div>
+        <div class="profile-email">{{ user }}</div>
+      </div>
+    </div>
+    <a href="/logout" class="btn-logout">⏻ Logout</a>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="stat-cards">
+    <a href="/scanner" class="stat-card" style="--card-color:var(--cy)" onclick="this.style.textDecoration='none'">
+      <div class="stat-card-icon">🌐</div>
+      <div class="stat-card-num" style="color:var(--cy)">{{ web_count }}</div>
+      <div class="stat-card-label">Web Scans</div>
+    </a>
+    <a href="/scanner" class="stat-card" style="--card-color:var(--lav);text-decoration:none">
+      <div class="stat-card-icon">📡</div>
+      <div class="stat-card-num" style="color:var(--lav)">{{ net_count }}</div>
+      <div class="stat-card-label">Network Scans</div>
+    </a>
+    <a href="/scanner" class="stat-card" style="--card-color:var(--rose);text-decoration:none">
+      <div class="stat-card-icon">🖥</div>
+      <div class="stat-card-num" style="color:var(--rose)">{{ sys_count }}</div>
+      <div class="stat-card-label">System Scans</div>
+    </a>
+  </div>
+
+  <!-- History filter tabs -->
+  <div class="section-hdr"><span class="section-bar"></span>Scan History</div>
+  <div class="hist-tabs">
+    <button class="hist-tab active" onclick="filterHistory('all',this)">All ({{ web_count + net_count + sys_count }})</button>
+    <button class="hist-tab" onclick="filterHistory('web',this)">🌐 Web ({{ web_count }})</button>
+    <button class="hist-tab" onclick="filterHistory('net',this)">📡 Network ({{ net_count }})</button>
+    <button class="hist-tab" onclick="filterHistory('sys',this)">🖥 System ({{ sys_count }})</button>
+  </div>
+
+  <!-- Web scans -->
+  {% if web_scans %}
+  <div class="hist-section" data-type="web">
+    {% for scan in web_scans %}
+    <div class="hist-item">
+      <div class="hist-icon">🌐</div>
+      <div style="flex:1;min-width:0">
+        <div class="hist-target">{{ scan.website }}</div>
+        <div class="hist-meta">{{ scan.timestamp.strftime('%Y-%m-%d %H:%M') if scan.timestamp else 'N/A' }} — web scan</div>
+      </div>
+      <span class="badge badge-low">web</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Network scans -->
+  {% if net_scans %}
+  <div class="hist-section" data-type="net">
+    {% for scan in net_scans %}
+    <div class="hist-item">
+      <div class="hist-icon">📡</div>
+      <div style="flex:1;min-width:0">
+        <div class="hist-target">{{ scan.ip_address }}</div>
+        <div class="hist-meta">{{ scan.timestamp.strftime('%Y-%m-%d %H:%M') if scan.timestamp else 'N/A' }} — network scan</div>
+      </div>
+      <span class="badge badge-medium">network</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- System scans -->
+  {% if sys_scans %}
+  <div class="hist-section" data-type="sys">
+    {% for scan in sys_scans %}
+    <div class="hist-item">
+      <div class="hist-icon">🖥</div>
+      <div style="flex:1;min-width:0">
+        <div class="hist-target">{{ scan.hostname }}</div>
+        <div class="hist-meta">{{ scan.timestamp.strftime('%Y-%m-%d %H:%M') if scan.timestamp else 'N/A' }} — system scan</div>
+      </div>
+      <span class="badge badge-high">system</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if web_count + net_count + sys_count == 0 %}
+  <div class="empty-state">> No scans yet. Go to <a href="/scanner" style="color:var(--cy)">Scanner</a> to start.</div>
+  {% endif %}
+
+</div>
+</div>
+
+<script>
+function filterHistory(type, btn) {
+  document.querySelectorAll('.hist-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.hist-section').forEach(sec=>{
+    if(type==='all' || sec.dataset.type===type) {
+      sec.style.display='block';
+    } else {
+      sec.style.display='none';
+    }
+  });
+}
+</script>
+{% endblock %}

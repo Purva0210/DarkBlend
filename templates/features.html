@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}DarkBlend — Features{% endblock %}
+
+{% block extra_head %}
+<style>
+.feats-wrap{min-height:calc(100vh - 58px);padding:48px 32px}
+.feats-hero{text-align:center;max-width:640px;margin:0 auto 60px}
+.feats-hero-tag{font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:var(--cy);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:14px}
+.feats-hero-title{font-family:'Orbitron',monospace;font-size:clamp(20px,4vw,36px);font-weight:900;color:#fff;margin-bottom:12px;line-height:1.1}
+.feats-hero-title span{color:var(--cy);text-shadow:0 0 30px rgba(0,245,200,.3)}
+.feats-hero-sub{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--txm);line-height:1.7}
+.feats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1000px;margin:0 auto 48px}
+.feat-card{background:var(--bg2);border:1px solid rgba(0,245,200,.1);border-radius:18px;padding:28px;position:relative;overflow:hidden;transition:all 0.3s}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent-grad);opacity:0;transition:0.3s}
+.feat-card:hover{transform:translateY(-4px);border-color:rgba(0,245,200,.3);box-shadow:0 8px 40px rgba(0,245,200,.08)}
+.feat-card:hover::before{opacity:1}
+.feat-card-icon{width:52px;height:52px;border-radius:12px;background:rgba(0,245,200,.06);border:1.5px solid rgba(0,245,200,.2);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px}
+.feat-card-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:#fff;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px}
+.feat-card-desc{font-size:13px;color:var(--txm);line-height:1.7;margin-bottom:16px}
+.feat-card-items{list-style:none;display:flex;flex-direction:column;gap:5px}
+.feat-card-item{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txm);display:flex;align-items:flex-start;gap:7px}
+.feat-card-item::before{content:'▶';color:var(--cy);font-size:9px;margin-top:2px;flex-shrink:0}
+.cta-banner{background:rgba(0,245,200,.04);border:1.5px solid var(--cy);border-radius:16px;padding:40px;text-align:center;max-width:600px;margin:0 auto;animation:glow-pulse 3s ease-in-out infinite}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gbg feats-wrap">
+  <div class="feats-hero fade-in">
+    <div class="feats-hero-tag">⚡ Platform Features</div>
+    <h1 class="feats-hero-title">Comprehensive <span>Security Scanning</span> Suite</h1>
+    <p class="feats-hero-sub">Every tool you need to identify, analyze, and remediate security vulnerabilities across your entire infrastructure.</p>
+  </div>
+
+  <div class="feats-grid">
+    {% set features = [
+      ('🔒','SSL Certificate Check','--accent-grad:linear-gradient(90deg,var(--cy),var(--mint))','Validate SSL certs, check expiry and TLS configuration to ensure encrypted connections are properly configured.',['Certificate validity & expiry check','TLS protocol version analysis','Certificate issuer verification','Days until expiry calculation','Wildcard certificate detection']),
+      ('🛡','Security Headers','--accent-grad:linear-gradient(90deg,var(--lav),var(--cy))','Analyze all HTTP response security headers and identify missing protection layers with actionable fixes.',['Content-Security-Policy analysis','X-Frame-Options clickjacking check','HSTS enforcement verification','X-Content-Type-Options check','Referrer & Permissions Policy audit']),
+      ('🔌','Port Scanning','--accent-grad:linear-gradient(90deg,var(--rose),var(--lav))','Detect open network ports and classify security risks with service banner grabbing.',['24 common ports scanned','Risk level classification','Service banner grabbing','Critical port detection','Firewall recommendations']),
+      ('🌐','DNS Analysis','--accent-grad:linear-gradient(90deg,var(--peach),var(--rose))','Comprehensive DNS record analysis including email security configuration.',['SPF record verification','DMARC policy check','Mail server enumeration','Email spoofing risk analysis','DNS misconfiguration detection']),
+      ('⚠','Subdomain Discovery','--accent-grad:linear-gradient(90deg,var(--mint),var(--cy))','Find exposed subdomains that could serve as vulnerable attack vectors.',['Common subdomain enumeration','Attack surface mapping','Wildcard subdomain detection','Staging environment exposure','Security scope analysis']),
+      ('🤖','AI-Powered Reports','--accent-grad:linear-gradient(90deg,var(--lav),var(--rose))','Intelligent security analysis with actionable recommendations, exact fix commands, and hardening guidance.',['Executive summary generation','Exact fix commands (nginx/apache)','Firewall rule generation','Hardening checklist','Prioritized remediation steps']),
+      ('🖥','System Scan','--accent-grad:linear-gradient(90deg,var(--cy),var(--lav))','Local system vulnerability assessment covering OS, CPU, memory and running processes.',['OS information & version','CPU & memory usage analysis','Disk usage monitoring','Running process audit','System hardening recommendations']),
+      ('📡','Network Scan','--accent-grad:linear-gradient(90deg,var(--rose),var(--cy))','Deep IP port scanning with risk classification, service identification and banner analysis.',['IPv4 port scanning','Service fingerprinting','Risk classification engine','Banner grab analysis','Network exposure reporting']),
+    ] %}
+    {% for icon,title,accent,desc,items in features %}
+    <div class="feat-card" style="{{ accent }}">
+      <div class="feat-card-icon">{{ icon }}</div>
+      <div class="feat-card-title">{{ title }}</div>
+      <div class="feat-card-desc">{{ desc }}</div>
+      <ul class="feat-card-items">
+        {% for item in items %}
+        <li class="feat-card-item">{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="cta-banner fade-in">
+    <h2 style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:#fff;margin-bottom:10px">Ready to Start Scanning?</h2>
+    <p style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--txm);margin-bottom:24px">Access all features with just your email. No password, no credit card.</p>
+    <a href="{% if user %}/scanner{% else %}/signup{% endif %}" class="btn-primary" style="font-size:11px;padding:14px 36px">▶ Launch Scanner</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+git add .
+git commit -m "Updated code"
+git push origin main
+
+https://www.amazon.in
+
+http://yellowpages.in/

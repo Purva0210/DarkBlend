@@ -1,0 +1,736 @@
+{% extends "base.html" %}
+{% block title %}DarkBlend — Scanner{% endblock %}
+
+{% block extra_head %}
+<style>
+.scanner-wrap{
+  min-height:calc(100vh - 58px);padding:28px;
+}
+.scanner-inner{max-width:820px;margin:0 auto}
+
+/* Tabs */
+.scan-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.tab-btn{
+  font-family:'Orbitron',monospace;font-size:8px;font-weight:700;
+  padding:8px 16px;border-radius:4px;
+  border:1px solid rgba(0,245,200,.2);
+  background:transparent;color:var(--txm);
+  cursor:pointer;transition:0.2s;letter-spacing:0.08em;text-transform:uppercase;
+  display:flex;align-items:center;gap:5px
+}
+.tab-btn.active,.tab-btn:hover{
+  border-color:var(--cy);background:var(--cy);color:#070b12
+}
+
+/* Input card */
+.input-card{
+  background:var(--bg2);border:1px solid rgba(0,245,200,.12);
+  border-radius:16px;padding:24px;margin-bottom:20px
+}
+.tab-header{
+  display:flex;align-items:center;gap:10px;
+  padding-bottom:14px;margin-bottom:16px;
+  border-bottom:1px solid rgba(0,245,200,.08)
+}
+.tab-header-icon{
+  width:36px;height:36px;background:rgba(0,245,200,.08);
+  border:1px solid var(--bd);border-radius:9px;
+  display:flex;align-items:center;justify-content:center;font-size:16px
+}
+.scan-input{
+  width:100%;background:var(--bg4);
+  border:1px solid rgba(0,245,200,.15);border-radius:8px;
+  padding:12px 14px;font-size:13px;color:var(--txt);
+  font-family:'Share Tech Mono',monospace;outline:none;
+  caret-color:var(--cy);transition:0.2s;margin-bottom:4px
+}
+.scan-input:focus{border-color:rgba(0,245,200,.4);box-shadow:0 0 12px rgba(0,245,200,.08)}
+.scan-hint{
+  font-family:'Share Tech Mono',monospace;font-size:9px;
+  color:var(--txd);margin-bottom:14px
+}
+.scan-btn{
+  width:100%;background:transparent;border:1px solid var(--cy);
+  color:var(--cy);border-radius:8px;padding:13px;
+  font-family:'Orbitron',monospace;font-weight:900;font-size:9px;
+  cursor:pointer;letter-spacing:0.1em;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  text-transform:uppercase;transition:0.2s
+}
+.scan-btn:hover:not(:disabled){background:rgba(0,245,200,.08)}
+.scan-btn:disabled{opacity:0.5;cursor:not-allowed}
+.error-box{
+  background:rgba(255,107,157,.08);border:1px solid rgba(255,107,157,.2);
+  color:var(--rose);border-radius:8px;padding:10px 14px;
+  margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:11px
+}
+
+/* Progress */
+.progress-card{
+  background:var(--bg2);border:1px solid rgba(0,245,200,.12);
+  border-radius:16px;padding:28px;animation:fu 0.4s ease
+}
+.prog-bar-wrap{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-bottom:24px}
+.prog-bar-fill{
+  height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--lavD),var(--cy),var(--mint));
+  transition:width 0.5s ease;box-shadow:0 0 8px rgba(0,245,200,.4)
+}
+.prog-step{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 0;border-bottom:1px solid rgba(0,245,200,.05)
+}
+.prog-step:last-child{border-bottom:none}
+.step-dot{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:12px;
+  transition:0.3s
+}
+
+/* Report */
+.report-wrap{animation:fu 0.45s ease}
+.score-ring-wrap{
+  position:relative;width:120px;height:120px;flex-shrink:0
+}
+.score-text{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center
+}
+.report-header{
+  background:var(--bg2);border:1px solid rgba(0,245,200,.15);
+  border-radius:16px;padding:20px;margin-bottom:14px;
+  display:flex;align-items:center;gap:20px;flex-wrap:wrap
+}
+.rcard{
+  background:var(--bg2);border:1px solid rgba(0,245,200,.1);
+  border-radius:14px;margin-bottom:12px;overflow:hidden
+}
+.rcard-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 16px;border-bottom:1px solid rgba(0,245,200,.06)
+}
+.rcard-icon{
+  width:32px;height:32px;background:rgba(0,245,200,.08);
+  border:1px solid var(--bd);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0
+}
+.rcard-body{padding:12px 16px}
+.badge{
+  border-radius:4px;padding:2px 8px;
+  font-family:'Orbitron',monospace;font-size:9px;font-weight:800;
+  letter-spacing:0.06em;text-transform:uppercase
+}
+.badge-low{background:rgba(0,245,200,.08);color:var(--cy);border:1px solid rgba(0,245,200,.2)}
+.badge-medium{background:rgba(255,179,71,.08);color:var(--peach);border:1px solid rgba(255,179,71,.2)}
+.badge-high{background:rgba(255,107,157,.08);color:var(--rose);border:1px solid rgba(255,107,157,.2)}
+.badge-critical{background:rgba(255,60,60,.12);color:#ff4444;border:1px solid rgba(255,60,60,.3)}
+
+.hdr-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 0;border-bottom:1px solid rgba(0,245,200,.05);cursor:pointer
+}
+.hdr-fix{
+  margin-top:8px;padding:10px 12px;
+  background:rgba(255,107,157,.05);border:1px solid rgba(255,107,157,.15);
+  border-radius:6px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--txm)
+}
+.port-row{
+  display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid rgba(0,245,200,.05)
+}
+.port-num{
+  font-family:'Orbitron',monospace;font-size:18px;font-weight:900;
+  color:var(--cy);min-width:48px
+}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.stat-item{border-bottom:1px solid rgba(0,245,200,.05);padding:7px 0}
+.stat-key{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--txm)}
+.stat-val{font-weight:700;color:#fff;font-family:'Share Tech Mono',monospace;font-size:10px;margin-top:2px}
+
+/* ─── SOLUTIONS BANNER ─── */
+.solutions-banner{
+  background:linear-gradient(135deg,rgba(124,77,255,.1),rgba(0,245,200,.06));
+  border:1.5px solid var(--lav);border-radius:14px;
+  padding:20px 20px;margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  animation:glow-pulse 3s ease-in-out infinite
+}
+.solutions-banner-text{flex:1;min-width:200px}
+.solutions-banner-title{
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:900;
+  color:var(--lav);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px
+}
+.solutions-banner-desc{
+  font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txm);line-height:1.6
+}
+.solutions-btn{
+  background:var(--lav);color:#070b12;border:none;
+  padding:11px 24px;border-radius:6px;
+  font-family:'Orbitron',monospace;font-size:9px;font-weight:900;
+  cursor:pointer;letter-spacing:0.1em;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;transition:0.2s;
+  box-shadow:0 0 16px rgba(184,154,255,.3);white-space:nowrap;text-decoration:none
+}
+.solutions-btn:hover{box-shadow:0 0 28px rgba(184,154,255,.5);transform:translateY(-1px)}
+
+.ai-btn{
+  width:100%;background:transparent;border:1px solid var(--lav);
+  color:var(--lav);border-radius:8px;padding:12px;
+  font-family:'Orbitron',monospace;font-weight:900;font-size:9px;
+  cursor:pointer;letter-spacing:0.1em;text-transform:uppercase;
+  display:flex;align-items:center;justify-content:center;gap:6px;transition:0.2s
+}
+.ai-btn:hover{background:rgba(184,154,255,.08)}
+.ai-result{
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  color:var(--txm);line-height:1.9;white-space:pre-wrap
+}
+
+/* PDF report button */
+.pdf-btn{
+  background:transparent;border:1px solid rgba(255,179,71,.3);color:var(--peach);
+  padding:8px 16px;border-radius:4px;
+  font-family:'Orbitron',monospace;font-size:8px;font-weight:700;
+  cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;
+  display:flex;align-items:center;gap:5px;transition:0.2s
+}
+.pdf-btn:hover{background:rgba(255,179,71,.08)}
+
+@media print {
+  nav.db-nav, .scan-tabs, #phase-input, #phase-progress, .scan-btn, .ai-btn, .pdf-btn, button, .solutions-banner { display:none!important; }
+  body { background: #fff!important; color: #000!important; }
+  .rcard { border: 1px solid #ccc!important; background: #fff!important; page-break-inside: avoid; }
+  .report-header { background: #f5f5f5!important; }
+  :root { --bg2:#fff; --txm:#444; --cy:#007a65; --rose:#c00; --peach:#c77; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gbg scanner-wrap">
+<div class="scanner-inner">
+
+<!-- TAB BUTTONS -->
+<div class="scan-tabs" id="scanTabs">
+  <button class="tab-btn active" data-tab="web" onclick="setTab('web',this)">🌐 Website Scan</button>
+  <button class="tab-btn" data-tab="net" onclick="setTab('net',this)">📡 Network Scan</button>
+  <button class="tab-btn" data-tab="sys" onclick="setTab('sys',this)">🖥 System Scan</button>
+</div>
+
+<!-- ERROR -->
+<div class="error-box" id="errorBox" style="display:none"></div>
+
+<!-- INPUT PHASE -->
+<div id="phase-input">
+  <div class="input-card fade-in">
+    <div class="tab-header">
+      <div class="tab-header-icon" id="tabIcon">🌐</div>
+      <div>
+        <div style="font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#fff;letter-spacing:0.06em;text-transform:uppercase" id="tabLabel">Website Scan</div>
+        <div style="font-size:11px;color:var(--txm);margin-top:2px" id="tabDesc">Analyze HTTP security headers, SSL, ports, DNS & subdomains</div>
+      </div>
+    </div>
+    <label style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:var(--txm);letter-spacing:0.1em;display:block;margin-bottom:6px;text-transform:uppercase" id="inputLabel">Target URL</label>
+    <input type="text" class="scan-input" id="scanInput" placeholder="https://example.com" onkeydown="if(event.key==='Enter')startScan()">
+    <div class="scan-hint" id="inputHint">> Include http:// or https:// prefix</div>
+    <button class="scan-btn" id="scanBtn" onclick="startScan()">🔍 Initiate Scan</button>
+  </div>
+</div>
+
+<!-- PROGRESS PHASE -->
+<div id="phase-progress" style="display:none">
+  <div class="progress-card">
+    <h2 style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:var(--cy);text-align:center;margin-bottom:5px;letter-spacing:0.08em;text-shadow:0 0 20px rgba(0,245,200,.3)">Scanning...</h2>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--txm);text-align:center;margin-bottom:20px;word-break:break-all" id="progTarget"></div>
+    <div style="display:flex;justify-content:space-between;font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:var(--txm);margin-bottom:6px;letter-spacing:0.08em;text-transform:uppercase">
+      <span>Overall Progress</span>
+      <span style="color:var(--cy)" id="progCount">0 / 6</span>
+    </div>
+    <div class="prog-bar-wrap">
+      <div class="prog-bar-fill" id="progBar" style="width:0%"></div>
+    </div>
+    <div id="progSteps"></div>
+  </div>
+</div>
+
+<!-- REPORT PHASE -->
+<div id="phase-report" style="display:none"></div>
+
+</div>
+</div>
+
+<script>
+const STEPS = {
+  web: ['Checking SSL Certificate','Analyzing Security Headers','Scanning Open Ports','Examining DNS Records','Discovering Subdomains','Generating AI Security Report'],
+  net: ['Resolving Hostname','Scanning Common Ports','Grabbing Service Banners','Assessing Risk Levels','Analyzing Open Services','Generating Security Report'],
+  sys: ['Identifying System','Gathering OS Information','Analyzing CPU & Memory','Checking Running Processes','Auditing Installed Software','Generating Security Report'],
+};
+const TAB_META = {
+  web: {icon:'🌐',label:'Website Scan',desc:'Analyze HTTP security headers, SSL, ports, DNS & subdomains',placeholder:'https://example.com',inputLabel:'Target URL',hint:'> Include http:// or https:// prefix'},
+  net: {icon:'📡',label:'Network Scan',desc:'Deep port scan with risk classification and banner grab',placeholder:'192.168.1.1',inputLabel:'IP Address / Hostname',hint:'> IPv4 address or resolvable hostname'},
+  sys: {icon:'🖥',label:'System Scan',desc:'OS info, CPU, memory analysis and vulnerability assessment',placeholder:'localhost',inputLabel:'System Hostname',hint:'> Use "localhost" for this machine'},
+};
+let currentTab = 'web';
+let scanData = null;
+
+function setTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const m = TAB_META[tab];
+  document.getElementById('tabIcon').textContent = m.icon;
+  document.getElementById('tabLabel').textContent = m.label;
+  document.getElementById('tabDesc').textContent = m.desc;
+  document.getElementById('scanInput').placeholder = m.placeholder;
+  document.getElementById('inputLabel').textContent = m.inputLabel;
+  document.getElementById('inputHint').textContent = m.hint;
+  document.getElementById('scanInput').focus();
+}
+
+function showPhase(ph) {
+  ['input','progress','report'].forEach(p=>{
+    document.getElementById('phase-'+p).style.display = p===ph?'block':'none';
+  });
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.style.display = msg ? 'block' : 'none';
+  el.textContent = '✗ ' + msg;
+}
+
+async function startScan() {
+  const val = document.getElementById('scanInput').value.trim();
+  if(!val) return;
+  showError('');
+  showPhase('progress');
+  document.getElementById('progTarget').textContent = val;
+
+  const steps = STEPS[currentTab];
+  const stepEls = steps.map((s,i) => `
+    <div class="prog-step" id="step-${i}">
+      <div class="step-dot" id="dot-${i}" style="border:2px solid rgba(0,245,200,.2);color:var(--cy)"></div>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--txm)" id="steplabel-${i}">${s}</span>
+    </div>`).join('');
+  document.getElementById('progSteps').innerHTML = stepEls;
+  document.getElementById('progCount').textContent = `0 / ${steps.length}`;
+  document.getElementById('progBar').style.width = '0%';
+
+  let done = 0;
+  const stepInterval = setInterval(()=>{
+    if(done > 0) {
+      const prev = done - 1;
+      document.getElementById('dot-'+prev).innerHTML = '✓';
+      document.getElementById('dot-'+prev).style.cssText += ';background:rgba(0,245,200,.1);border-color:var(--cy)';
+      document.getElementById('steplabel-'+prev).style.color = 'var(--cy)';
+    }
+    if(done < steps.length) {
+      document.getElementById('dot-'+done).innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite">⟳</span>';
+      document.getElementById('dot-'+done).style.cssText += ';border-color:var(--cy)';
+      document.getElementById('steplabel-'+done).style.color = 'var(--cy)';
+      done++;
+      document.getElementById('progCount').textContent = `${done} / ${steps.length}`;
+      document.getElementById('progBar').style.width = `${(done/steps.length)*100}%`;
+    } else {
+      clearInterval(stepInterval);
+    }
+  }, 900);
+
+  let endpoint, body;
+  if(currentTab==='web')      { endpoint='web-scan';    body={url:val,email:'{{user}}'} }
+  else if(currentTab==='net') { endpoint='network-scan';body={ip:val,email:'{{user}}'} }
+  else                        { endpoint='system-scan'; body={system_name:val,email:'{{user}}'} }
+
+  try {
+    const r = await fetch(`/api/${endpoint}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data = await r.json();
+    if(data.error) throw new Error(data.error);
+    scanData = data;
+
+    // ── Save to sessionStorage for solutions page ──
+    try {
+      sessionStorage.setItem('darkblend_scan', JSON.stringify({type: currentTab, data: data}));
+    } catch(e) {}
+
+    const remaining = (steps.length - done + 1) * 900;
+    setTimeout(()=>{
+      clearInterval(stepInterval);
+      steps.forEach((_,i)=>{
+        const d = document.getElementById('dot-'+i);
+        if(d){ d.innerHTML='✓'; d.style.cssText=';background:rgba(0,245,200,.1);border-color:var(--cy)'; }
+        const l = document.getElementById('steplabel-'+i);
+        if(l) l.style.color='var(--cy)';
+      });
+      document.getElementById('progBar').style.width='100%';
+      setTimeout(()=>renderReport(currentTab, data), 600);
+    }, remaining + 200);
+  } catch(e) {
+    clearInterval(stepInterval);
+    showPhase('input');
+    showError(e.message);
+  }
+}
+
+function drawRing(canvas, score) {
+  const size = 120, r = size/2 - 8;
+  const cx = size/2, cy = size/2;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,size,size);
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,245,200,0.1)'; ctx.lineWidth=6; ctx.stroke();
+  if(score>0){
+    const end = -Math.PI/2 + (score/100)*Math.PI*2;
+    const grad = ctx.createLinearGradient(0,0,size,size);
+    const color = score>=80?'#00f5c8':score>=50?'#ffb347':'#ff6b9d';
+    grad.addColorStop(0, color); grad.addColorStop(1,'#7c4dff');
+    ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,end);
+    ctx.strokeStyle=grad; ctx.lineWidth=6; ctx.lineCap='round'; ctx.stroke();
+  }
+}
+
+function badge(level) {
+  const l = (level||'low').toLowerCase();
+  return `<span class="badge badge-${l}">${l}</span>`;
+}
+
+function formatStatus(ok) {
+  return ok
+    ? `<span style="color:var(--cy);font-family:'Orbitron',monospace;font-size:8px;padding:2px 8px;background:rgba(0,245,200,.08);border:1px solid rgba(0,245,200,.2);border-radius:3px">Protected</span>`
+    : `<span style="color:var(--rose);font-family:'Orbitron',monospace;font-size:8px;padding:2px 8px;background:rgba(255,107,157,.08);border:1px solid rgba(255,107,157,.2);border-radius:3px">Missing</span>`;
+}
+
+// ── Solutions banner (injected into every report) ──
+function solutionsBanner(score) {
+  const level = score >= 80 ? 'good' : score >= 50 ? 'moderate' : 'critical';
+  const msgs = {
+    good: 'Good score — but vulnerabilities remain. Get exact fix commands and hardening steps.',
+    moderate: 'Several issues detected. Get step-by-step solutions for every vulnerability found.',
+    critical: 'Critical vulnerabilities found! Get immediate fix commands and precautions.'
+  };
+  return `
+  <div class="solutions-banner">
+    <div style="font-size:28px">🔐</div>
+    <div class="solutions-banner-text">
+      <div class="solutions-banner-title">View Full Security Solutions</div>
+      <div class="solutions-banner-desc">${msgs[level]}</div>
+    </div>
+    <a href="/solutions" class="solutions-btn">⚡ View Solutions & Fixes</a>
+  </div>`;
+}
+
+// ── WEB REPORT ──
+function renderWebReport(d) {
+  const scoreColor = d.score>=80?'var(--cy)':d.score>=50?'var(--peach)':'var(--rose)';
+  const hdrRows = Object.entries(d.headers||{}).map(([name,h])=>`
+    <div class="hdr-row" onclick="toggleHdr('hdr-${name.replace(/[^a-z]/gi,'_')}')">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="color:${h.present?'var(--cy)':'var(--rose)'};font-size:14px">${h.present?'✓':'✗'}</span>
+        <div>
+          <div style="font-weight:700;color:#fff;font-size:11px">${name}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txm);margin-top:1px">${h.desc}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">${badge(h.priority)}${formatStatus(h.present)}</div>
+    </div>
+    ${!h.present?`<div class="hdr-fix" id="hdr-${name.replace(/[^a-z]/gi,'_')}" style="display:none">
+      ⚠ Add to your server config:<br>
+      <code style="color:var(--peach)">Nginx: add_header ${name} "...";</code><br>
+      <code style="color:var(--peach)">Apache: Header always set ${name} "..."</code>
+    </div>`:''}
+  `).join('');
+
+  const portRows = (d.ports||[]).map(p=>`
+    <div class="port-row">
+      <span class="port-num">${p.port}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;color:#fff;font-size:11px">${p.service}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txm)">TCP Open</div>
+      </div>
+      ${badge(p.risk)}
+    </div>`).join('');
+
+  const subdomains = (d.subdomains||[]).map(s=>`
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txm);padding:5px 0;border-bottom:1px solid rgba(0,245,200,.05)">
+      <span style="color:var(--cy);margin-right:8px">▶</span>${s}
+    </div>`).join('');
+
+  return `
+  <div class="report-wrap" id="reportRoot">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h1 style="font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:#fff;letter-spacing:0.06em">Security Report</h1>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--txm);margin-top:3px">
+          <span style="color:var(--cy)">${d.url}</span><br>
+          Scanned on ${new Date(d.timestamp).toLocaleString()}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="pdf-btn" onclick="printReport()">📄 Export PDF</button>
+        <button style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;padding:7px 14px;border-radius:4px;background:transparent;border:1px solid rgba(0,245,200,.25);color:var(--txm);cursor:pointer;letter-spacing:0.08em;text-transform:uppercase" onclick="rescan()">⟳ Re-scan</button>
+      </div>
+    </div>
+
+    ${solutionsBanner(d.score)}
+
+    <div class="report-header">
+      <div style="position:relative;width:120px;height:120px;flex-shrink:0">
+        <canvas id="scoreCanvas" width="120" height="120"></canvas>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <span style="font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:${scoreColor};text-shadow:0 0 20px ${scoreColor}">${d.score}</span>
+          <span style="font-family:'Orbitron',monospace;font-size:8px;color:var(--txm);font-weight:700;letter-spacing:0.08em;margin-top:2px">SCORE</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <h3 style="font-family:'Orbitron',monospace;font-size:12px;font-weight:900;color:#fff;margin-bottom:5px;text-transform:uppercase">Overall Security Assessment</h3>
+        <p style="font-size:12px;color:var(--txm);margin-bottom:12px">${d.score>=80?'Your website has strong security measures in place.':d.score>=50?'Moderate security — several issues need attention.':'Critical vulnerabilities require immediate attention.'}</p>
+        <div style="display:flex;gap:18px;flex-wrap:wrap">
+          <div><div style="font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:var(--cy)">${Object.values(d.headers||{}).filter(h=>h.present).length}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txm);margin-top:2px">Headers OK</div></div>
+          <div><div style="font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:var(--lav)">${(d.ports||[]).length}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txm);margin-top:2px">Open Ports</div></div>
+          <div><div style="font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:var(--peach)">${(d.subdomains||[]).length}</div><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txm);margin-top:2px">Subdomains</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rcard">
+      <div class="rcard-head">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="rcard-icon">🔒</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#fff;letter-spacing:0.06em;text-transform:uppercase">SSL Certificate</div>
+            <div style="font-size:10px;color:var(--txm);margin-top:1px">Certificate validity and configuration</div>
+          </div>
+        </div>
+        <span style="color:${d.ssl?.valid?'var(--cy)':'var(--rose)'};font-size:20px">${d.ssl?.valid?'✓':'✗'}</span>
+      </div>
+      <div class="rcard-body">
+        <div class="stat-grid">
+          ${[['Status',d.ssl?.valid?'Valid ✓':'Invalid ✗'],['Protocol',d.ssl?.protocol||'N/A'],['Issuer',d.ssl?.issuer||'N/A'],['Expires In',d.ssl?.expires_in_days!=null?d.ssl.expires_in_days+' days':'N/A']].map(([k,v])=>`<div class="stat-item"><div class="stat-key">${k}</div><div class="stat-val">${v}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="rcard">
+      <div class="rcard-head">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="rcard-icon">🛡</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#fff;letter-spacing:0.06em;text-transform:uppercase">Security Headers</div>
+            <div style="font-size:10px;color:var(--txm);margin-top:1px">HTTP security header analysis</div>
+          </div>
+        </div>
+        <span style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:var(--cy)">${Math.round(Object.values(d.headers||{}).filter(h=>h.present).length/Math.max(Object.keys(d.headers||{}).length,1)*100)}%</span>
+      </div>
+      <div class="rcard-body">${hdrRows||'<div style="color:var(--txm);font-size:12px">No header data</div>'}</div>
+    </div>
+
+    ${d.ports?.length>0?`<div class="rcard">
+      <div class="rcard-head">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="rcard-icon">🔌</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#fff;letter-spacing:0.06em;text-transform:uppercase">Open Ports (${d.ports.length})</div>
+            <div style="font-size:10px;color:var(--txm);margin-top:1px">Network port scan results</div>
+          </div>
+        </div>
+      </div>
+      <div class="rcard-body">${portRows}</div>
+    </div>`:''}
+
+    <div class="rcard">
+      <div class="rcard-head">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="rcard-icon">🌐</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#fff;letter-spacing:0.06em;text-transform:uppercase">DNS & Email Security</div>
+            <div style="font-size:10px;color:var(--txm);margin-top:1px">SPF, DMARC and mail server records</div>
+          </div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(0,245,200,.05)">
+            <span style="color:${d.dns?.spf?'var(--cy)':'var(--rose)'};font-size:14px">${d.dns?.spf?'✓':'✗'}</span>
+            <div style="flex:1">
+              <div style="font-weight:700;color:#fff;font-size:11px">SPF Record</div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txm)">${d.dns?.spf?'Configured':'Missing — vulnerable to email spoofing'}</div>
+            </div>
+            ${badge(d.dns?.spf?'low':'high')}
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 0">
+            <span style="color:${d.dns?.dmarc?'var(--cy)':'var(--rose)'};font-size:14px">${d.dns?.dmarc?'✓':'✗'}</span>
+            <div style="flex:1">
+              <div style="font-weight:700;color:#fff;font-size:11px">DMARC Record</div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txm)">${d.dns?.dmarc?'Configured':'Missing — email authentication not enforced'}</div>
+            </div>
+            ${badge(d.dns?.dmarc?'low':'medium')}
+          </div>
+        </div>
+        ${d.dns?.mail_servers?.length?`<div style="margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--txm)">Mail Servers: ${d.dns.mail_servers.join(', ')}</div>`:''}
+      </div>
+    </div>
+
+    ${d.subdomains?.length>0?`<div class="rcard">
+      <div class="rcard-head">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="rcard-icon">⚠</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#fff;letter-spacing:0.06em;text-transform:uppercase">Discovered Subdomains (${d.subdomains.length})</div>
+            <div style="font-size:10px;color:var(--txm);margin-top:1px">Potential attack surface</div>
+          </div>
+        </div>
+      </div>
+      <div class="rcard-body">${(d.subdomains||[]).map(s=>`<div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--txm);padding:5px 0;border-bottom:1px solid rgba(0,245,200,.05)"><span style="color:var(--cy);margin-right:8px">▶</span>${s}</div>`).join('')}</div>
+    </div>`:''}
+  </div>`;
+}
+
+// ── NET REPORT ──
+function renderNetReport(d) {
+  const scoreColor = d.score>=80?'var(--cy)':d.score>=50?'var(--peach)':'var(--rose)';
+  const portRows = (d.open_ports||[]).map(p=>`
+    <div class="port-row">
+      <span class="port-num">${p.port}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;color:#fff;font-size:11px">${p.service}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txm)">${p.banner||'TCP Open'}</div>
+      </div>
+      ${badge(p.risk)}
+    </div>`).join('');
+
+  return `
+  <div class="report-wrap" id="reportRoot">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h1 style="font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:#fff;letter-spacing:0.06em">Network Scan Report</h1>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--txm);margin-top:3px">
+          <span style="color:var(--cy)">${d.ip}</span> — ${d.hostname}<br>
+          Scanned on ${new Date(d.timestamp).toLocaleString()}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="pdf-btn" onclick="printReport()">📄 Export PDF</button>
+        <button style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;padding:7px 14px;border-radius:4px;background:transparent;border:1px solid rgba(0,245,200,.25);color:var(--txm);cursor:pointer;letter-spacing:0.08em;text-transform:uppercase" onclick="rescan()">⟳ Re-scan</button>
+      </div>
+    </div>
+
+    ${solutionsBanner(d.score)}
+
+    <div class="report-header">
+      <div style="position:relative;width:120px;height:120px;flex-shrink:0">
+        <canvas id="scoreCanvas" width="120" height="120"></canvas>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <span style="font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:${scoreColor};text-shadow:0 0 20px ${scoreColor}">${d.score}</span>
+          <span style="font-family:'Orbitron',monospace;font-size:8px;color:var(--txm);font-weight:700;letter-spacing:0.08em;margin-top:2px">SCORE</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <h3 style="font-family:'Orbitron',monospace;font-size:12px;font-weight:900;color:#fff;margin-bottom:8px;text-transform:uppercase">Network Assessment</h3>
+        <div class="stat-grid">
+          ${[['IP',d.ip],['Hostname',d.hostname||'N/A'],['Open Ports',(d.open_ports||[]).length],['Critical Ports',(d.open_ports||[]).filter(p=>p.risk==='critical').length]].map(([k,v])=>`<div class="stat-item"><div class="stat-key">${k}</div><div class="stat-val">${v}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="rcard">
+      <div class="rcard-head">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="rcard-icon">🔌</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#fff;letter-spacing:0.06em;text-transform:uppercase">Open Ports (${(d.open_ports||[]).length})</div>
+            <div style="font-size:10px;color:var(--txm)">Port scan results with risk classification</div>
+          </div>
+        </div>
+      </div>
+      <div class="rcard-body">${portRows||'<div style="color:var(--txm);font-size:12px;text-align:center;padding:16px">> No open ports detected</div>'}</div>
+    </div>
+  </div>`;
+}
+
+// ── SYS REPORT ──
+function renderSysReport(d) {
+  const scoreColor = d.score>=80?'var(--cy)':d.score>=50?'var(--peach)':'var(--rose)';
+  const checkRows = (d.vulnerability_checks||[]).map(c=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,245,200,.05)">
+      <span style="font-size:14px">${c.status==='ok'?'✅':c.status==='warn'?'⚠️':'ℹ️'}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;color:#fff;font-size:11px">${c.check}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txm);margin-top:1px">${c.value}</div>
+      </div>
+      ${badge(c.status==='ok'?'low':c.status==='warn'?'medium':'low')}
+    </div>`).join('');
+
+  return `
+  <div class="report-wrap" id="reportRoot">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h1 style="font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:#fff;letter-spacing:0.06em">System Scan Report</h1>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--txm);margin-top:3px">
+          <span style="color:var(--cy)">${d.system_name}</span><br>
+          Scanned on ${new Date(d.timestamp).toLocaleString()}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="pdf-btn" onclick="printReport()">📄 Export PDF</button>
+        <button style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;padding:7px 14px;border-radius:4px;background:transparent;border:1px solid rgba(0,245,200,.25);color:var(--txm);cursor:pointer;letter-spacing:0.08em;text-transform:uppercase" onclick="rescan()">⟳ Re-scan</button>
+      </div>
+    </div>
+
+    ${solutionsBanner(d.score)}
+
+    <div class="report-header">
+      <div style="position:relative;width:120px;height:120px;flex-shrink:0">
+        <canvas id="scoreCanvas" width="120" height="120"></canvas>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <span style="font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:${scoreColor};text-shadow:0 0 20px ${scoreColor}">${d.score}</span>
+          <span style="font-family:'Orbitron',monospace;font-size:8px;color:var(--txm);font-weight:700;letter-spacing:0.08em;margin-top:2px">SCORE</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <h3 style="font-family:'Orbitron',monospace;font-size:12px;font-weight:900;color:#fff;margin-bottom:5px;text-transform:uppercase">System Security Assessment</h3>
+        <div class="stat-grid">
+          ${[['IP',d.ip],['OS',d.os],['CPU',d.cpu_usage],['Memory',d.memory_usage],['Disk',d.disk_usage||'N/A'],['Processes',d.running_processes],['Uptime',d.uptime_hours+'h'],['Machine',d.machine]].map(([k,v])=>`<div class="stat-item"><div class="stat-key">${k}</div><div class="stat-val">${v||'N/A'}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="rcard">
+      <div class="rcard-head">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="rcard-icon">🔍</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#fff;letter-spacing:0.06em;text-transform:uppercase">Security Checks</div>
+            <div style="font-size:10px;color:var(--txm)">Vulnerability assessment results</div>
+          </div>
+        </div>
+      </div>
+      <div class="rcard-body">${checkRows}</div>
+    </div>
+  </div>`;
+}
+
+function renderReport(type, data) {
+  const container = document.getElementById('phase-report');
+  if(type==='web') container.innerHTML = renderWebReport(data);
+  else if(type==='net') container.innerHTML = renderNetReport(data);
+  else container.innerHTML = renderSysReport(data);
+  showPhase('report');
+  setTimeout(()=>{
+    const canvas = document.getElementById('scoreCanvas');
+    if(canvas) drawRing(canvas, data.score);
+  }, 50);
+}
+
+function rescan() {
+  scanData = null;
+  showPhase('input');
+  showError('');
+}
+
+function toggleHdr(id) {
+  const el = document.getElementById(id);
+  if(el) el.style.display = el.style.display==='none'?'block':'none';
+}
+
+function printReport() {
+  window.print();
+}
+</script>
+{% endblock %}

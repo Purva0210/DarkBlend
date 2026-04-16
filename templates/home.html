@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}DarkBlend — Automated Vulnerability Scanner{% endblock %}
+
+{% block extra_head %}
+<style>
+.hero{
+  min-height:calc(100vh - 58px);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:48px 24px;position:relative;overflow:hidden
+}
+.hero-glow-1{
+  position:absolute;top:-80px;right:-100px;
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(124,77,255,.08),transparent 65%);
+  pointer-events:none
+}
+.hero-glow-2{
+  position:absolute;bottom:-60px;left:-60px;
+  width:300px;height:300px;
+  background:radial-gradient(circle,rgba(0,245,200,.05),transparent 65%);
+  pointer-events:none
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(0,245,200,.06);border:1px solid var(--bd);
+  border-radius:20px;padding:5px 14px;margin-bottom:28px
+}
+.hero-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(22px,5vw,52px);
+  font-weight:900;color:#fff;
+  letter-spacing:0.03em;line-height:1.1;
+  margin-bottom:12px;text-align:center
+}
+.hero-title span{color:var(--cy);text-shadow:0 0 40px rgba(0,245,200,.4)}
+.hero-sub{
+  font-family:'Share Tech Mono',monospace;font-size:13px;
+  color:var(--txm);line-height:1.8;margin-bottom:36px;
+  max-width:560px;text-align:center
+}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.hero-cta .btn-primary{font-size:11px;padding:14px 40px}
+.hero-cta .btn-outline{font-size:11px;padding:14px 28px}
+
+/* Features grid */
+.features-section{
+  padding:72px 32px;background:var(--bg);
+  border-top:1px solid var(--bd)
+}
+.section-tag{
+  font-family:'Orbitron',monospace;font-size:8px;font-weight:700;
+  color:var(--cy);letter-spacing:0.2em;text-transform:uppercase;
+  text-align:center;margin-bottom:14px
+}
+.section-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(16px,3vw,28px);
+  font-weight:900;color:#fff;text-align:center;margin-bottom:8px
+}
+.section-sub{
+  font-family:'Share Tech Mono',monospace;font-size:12px;
+  color:var(--txm);text-align:center;margin-bottom:48px
+}
+.feats-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:16px;max-width:1000px;margin:0 auto
+}
+.feat-item{
+  background:var(--bg2);border:1px solid rgba(0,245,200,.1);
+  border-radius:14px;padding:22px;transition:all 0.28s cubic-bezier(.34,1.56,.64,1)
+}
+.feat-item:hover{
+  transform:translateY(-5px);
+  border-color:rgba(0,245,200,.4);
+  box-shadow:0 0 28px rgba(0,245,200,.12)
+}
+.feat-icon{
+  width:44px;height:44px;border-radius:10px;
+  background:rgba(0,245,200,.08);border:1px solid rgba(0,245,200,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;margin-bottom:14px
+}
+.feat-name{
+  font-family:'Orbitron',monospace;font-size:9px;font-weight:700;
+  color:#fff;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px
+}
+.feat-desc{font-size:12px;color:var(--txm);line-height:1.6}
+
+/* CTA section */
+.cta-section{
+  padding:60px 32px;text-align:center;
+  background:var(--bg);border-top:1px solid var(--bd)
+}
+.cta-box{
+  border:1.5px solid var(--cy);border-radius:20px;
+  padding:44px;max-width:640px;margin:0 auto;
+  background:rgba(13,18,32,.9);
+  animation:glow-pulse 3s ease-in-out infinite
+}
+.cta-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(16px,3vw,26px);
+  font-weight:900;color:#fff;margin-bottom:10px
+}
+.cta-sub{
+  font-family:'Share Tech Mono',monospace;font-size:12px;
+  color:var(--txm);margin-bottom:24px
+}
+
+/* Modules modal */
+.modules-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px
+}
+.module-card{
+  background:var(--bg3);border:1px solid rgba(0,245,200,.12);
+  border-radius:12px;padding:16px 12px;text-align:center;
+  cursor:pointer;transition:all 0.25s
+}
+.module-card:hover{
+  border-color:rgba(0,245,200,.4);
+  box-shadow:0 0 18px rgba(0,245,200,.15);
+  transform:translateY(-3px)
+}
+.module-icon{font-size:22px;margin-bottom:8px}
+.module-name{
+  font-family:'Orbitron',monospace;font-size:8px;font-weight:700;
+  color:#fff;letter-spacing:0.06em;margin-bottom:5px;text-transform:uppercase
+}
+.module-desc{font-size:10px;color:var(--txm);line-height:1.5}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<div class="gbg hero">
+  <div class="hero-glow-1"></div>
+  <div class="hero-glow-2"></div>
+  <div class="fade-in" style="text-align:center;max-width:720px;position:relative;z-index:1">
+    <div class="hero-badge">
+      <span style="color:var(--cy);font-size:11px">⚡</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--txm);letter-spacing:0.06em">POWERED BY ADVANCED AI TECHNOLOGY</span>
+    </div>
+    <h1 class="hero-title">DarkBlend — Automated<br><span>Vulnerability Scanner</span></h1>
+    <p class="hero-sub">Efficient scanning to identify and resolve security vulnerabilities in your systems. Powered by advanced AI technology.</p>
+    <div class="hero-cta">
+      <a href="{% if user %}/scanner{% else %}/signup{% endif %}" class="btn-primary">Sign Up</a>
+      <button class="btn-outline" onclick="document.getElementById('modulesModal').classList.add('open')">View Features</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features-section">
+  <div class="section-tag">⚡ Capabilities</div>
+  <h2 class="section-title">Comprehensive Security Suite</h2>
+  <p class="section-sub">Everything you need to audit, analyze and harden your infrastructure</p>
+  <div class="feats-grid">
+    {% set feats = [
+      ('🔒','SSL Certificate','Validate SSL certs, check expiry dates and TLS configuration'),
+      ('🛡','Security Headers','Analyze HTTP headers and identify missing protection layers'),
+      ('🔌','Port Scanning','Detect open ports and identify potential network risks'),
+      ('🌐','DNS Analysis','Check DNS records, SPF, DMARC and email security settings'),
+      ('⚠','Subdomain Discovery','Find exposed subdomains that could be vulnerable attack vectors'),
+      ('🤖','AI Fix Reports','Intelligent actionable recommendations to fix vulnerabilities'),
+      ('🖥','System Scan','OS info, CPU, memory analysis and vulnerability assessment'),
+      ('📡','Network Scan','Deep IP port scanning with risk classification and banner grab'),
+    ] %}
+    {% for icon,name,desc in feats %}
+    <div class="feat-item">
+      <div class="feat-icon">{{icon}}</div>
+      <div class="feat-name">{{name}}</div>
+      <div class="feat-desc">{{desc}}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-box">
+    <h2 class="cta-title">Ready to Secure Your Assets?</h2>
+    <p class="cta-sub">Start your free security scan now. Sign up with just your email — no password needed.</p>
+    <a href="{% if user %}/scanner{% else %}/signup{% endif %}" class="btn-primary" style="font-size:11px;padding:14px 36px">
+      ▶ Start Scanning Now
+    </a>
+  </div>
+</section>
+
+<!-- MODULES MODAL -->
+<div class="modal-overlay" id="modulesModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <div class="modal-topbar"></div>
+    <button class="modal-close" onclick="document.getElementById('modulesModal').classList.remove('open')">✕</button>
+    <h2 style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--cy);text-align:center;letter-spacing:0.12em;margin-bottom:24px;text-transform:uppercase;text-shadow:0 0 20px rgba(0,245,200,.3)">Security Scan Modules</h2>
+    <div class="modules-grid">
+      {% set modules = [
+        ('🔒','SSL Check','Validate SSL certs, check expiry, ensure secure connections.'),
+        ('🛡','Security Headers','Analyze HTTP headers and identify missing protection layers.'),
+        ('🔌','Port Scanning','Detect open ports and security risks on any IP address.'),
+        ('🌐','DNS Analysis','Check DNS records, SPF, DMARC and email security.'),
+        ('⚠','Subdomains','Find exposed subdomains that are vulnerable attack vectors.'),
+        ('🖥','System Scan','OS info, CPU usage, memory and running processes.'),
+      ] %}
+      {% for icon,name,desc in modules %}
+      <div class="module-card" onclick="window.location='{% if user %}/scanner{% else %}/signup{% endif %}'">
+        <div class="module-icon">{{icon}}</div>
+        <div class="module-name">{{name}}</div>
+        <div class="module-desc">{{desc}}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
